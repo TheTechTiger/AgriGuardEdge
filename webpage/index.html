@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriGuardEdge — Precision Edge Intelligence & Soil Anomaly Detection</title>
+    <meta name="description"
+        content="Intelligent on-device anomaly detection and environmental telemetry for sustainable agriculture and precision irrigation.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Custom Glow Cursor Follower -->
+    <div id="cursor-glow" class="cursor-glow"></div>
+
+    <!-- Preloader Overlay -->
+    <div id="preloader" class="preloader">
+        <div class="preloader-content">
+            <div class="preloader-brand">
+                <svg class="brand-glyph-spin" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="14" stroke="#B6F36A" stroke-width="2" stroke-dasharray="8 6" />
+                    <path d="M16 8V24M8 16H24" stroke="#B6F36A" stroke-width="2" stroke-linecap="round" />
+                </svg>
+                <span>AgriGuardEdge</span>
+            </div>
+            <div class="preloader-bar-bg">
+                <div id="preloader-bar" class="preloader-bar"></div>
+            </div>
+            <div class="preloader-meta">
+                <span id="preloader-status">Initializing Neural Telemetry...</span>
+                <span id="preloader-percent">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header id="main-nav" class="main-nav">
+        <div class="nav-container">
+            <a href="#" class="brand-logo" id="brand-logo">
+                <svg width="24" height="24" viewBox="0 0 28 28" fill="none" class="brand-icon">
+                    <path d="M14 2L26 8V20L14 26L2 20V8L14 2Z" stroke="#B6F36A" stroke-width="2.2"
+                        stroke-linejoin="round" />
+                    <circle cx="14" cy="14" r="4.5" fill="#B6F36A" />
+                    <path d="M14 6V10M14 18V22M6 14H10M18 14H22" stroke="#B6F36A" stroke-width="1.8"
+                        stroke-linecap="round" />
+                </svg>
+                <span class="brand-text">AgriGuardEdge</span>
+            </a>
+
+            <nav class="nav-menu">
+                <div class="nav-item has-dropdown">
+                    <a href="#problem" class="nav-link">SOLUTIONS <span class="caret">⌄</span></a>
+                </div>
+                <div class="nav-item has-dropdown">
+                    <a href="#how-it-works" class="nav-link">OUR TECH <span class="caret">⌄</span></a>
+                </div>
+                <div class="nav-item">
+                    <a href="#hardware" class="nav-link">HARDWARE</a>
+                </div>
+                <div class="nav-item has-dropdown">
+                    <a href="#system-insights" class="nav-link">RESOURCES <span class="caret">⌄</span></a>
+                </div>
+            </nav>
+
+            <div class="nav-actions">
+                <a href="https://github.com/TheTechTiger/AgriGuardEdge" target="_blank" rel="noopener noreferrer" class="pill-cta-btn magnetic-btn">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 0.2rem;">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                    </svg>
+                    <span>GITHUB REPO</span>
+                    <span class="arrow-pill">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M3 6H9M9 6L6.5 3.5M9 6L6.5 8.5" stroke="currentColor" stroke-width="1.6"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========================================================================= -->
+    <!-- PINNED SCROLLYTELLING TRACK FOR SEQUENCE 1                                 -->
+    <!-- Image Sequence 1 plays completely from frame 1 to 248 as user scrolls here -->
+    <!-- ========================================================================= -->
+    <div id="hero-scrolly-track" class="scrolly-pin-track">
+        <div class="scrolly-pin-viewport">
+
+            <!-- Canvas for Image Sequence 1 -->
+            <canvas id="hero-canvas"></canvas>
+            <div class="canvas-vignette"></div>
+
+            <!-- NARRATIVE CHAPTER 1: HERO (Frames 0 - 65) -->
+            <div class="scrolly-chapter chapter-1 active" id="chapter-1">
+                <div class="chapter-content hero-layout">
+                    <div class="hero-headline-wrap">
+                        <div class="kicker-tag animate-split">AUTONOMOUS EDGE AGRONOMY</div>
+                        <h1 class="hero-title animate-title">
+                            Where Edge Intelligence<br>
+                            and Soil Precision<br>
+                            Meet
+                        </h1>
+                        <div class="hero-action-row">
+                            <a href="#problem" class="hero-btn-primary magnetic-btn">
+                                <span>EXPLORE SCENERY</span>
+                                <span class="btn-arrow-icon">
+                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                        <path d="M3.5 7H10.5M10.5 7L7.5 4M10.5 7L7.5 10" stroke="currentColor"
+                                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Floating HUD Targets on Island -->
+                    <div class="hero-hud-layer">
+                        <div class="hud-box hud-target-1 interactive-hud">
+                            <div class="hud-corners"></div>
+                            <div class="hud-tag-header">
+                                <span class="hud-dot pulsing"></span>
+                                <span class="hud-label">-4.3% MOISTURE DRIFT</span>
+                            </div>
+                            <div class="hud-subtext">VERIFIED ON-CHIP -1.2 m³ / H₂O SAVED</div>
+                        </div>
+
+                        <div class="hud-box hud-target-2 interactive-hud">
+                            <div class="hud-corners"></div>
+                            <div class="hud-tag-header">
+                                <span class="hud-dot"></span>
+                                <span class="hud-label">+18.4°C ROOT ZONE</span>
+                            </div>
+                            <div class="hud-subtext">MICROCLIMATE STABLE • LATENCY &lt; 0.02s</div>
+                        </div>
+
+                        <div class="hud-pin-marker pin-1 interactive-hud">
+                            <div class="pin-crosshair"></div>
+                            <div class="pin-pulse"></div>
+                            <div class="pin-card">
+                                <span class="pin-code">ESP32-S3 SENSOR NODE 01</span>
+                                <span class="pin-status">ACTIVE TELEMETRY</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Bar -->
+                    <div class="hero-bottom-bar">
+                        <div class="hero-subtext">
+                            <p class="bold-lead">Know your soil—precisely.</p>
+                            <p class="muted-body">Autonomous edge anomaly detection powered by TinyML, lightweight
+                                microcontrollers, and zero-cloud dependency you can trust.</p>
+                        </div>
+                        <div class="scroll-discover-badge">
+                            <div class="discover-rotating-ring">
+                                <svg viewBox="0 0 100 100" class="ring-svg">
+                                    <path id="textPath" d="M 50, 50 m -37, 0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0"
+                                        fill="none" />
+                                    <text>
+                                        <textPath href="#textPath" startOffset="0%">
+                                            • SCROLL TO DISCOVER • SCROLL TO EXPLORE
+                                        </textPath>
+                                    </text>
+                                </svg>
+                                <div class="ring-center-dot">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B6F36A"
+                                        stroke-width="2.5">
+                                        <circle cx="12" cy="12" r="4" />
+                                        <path d="M12 2V6M12 18V22M2 12H6M18 12H22" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NARRATIVE CHAPTER 2: MACRO ZOOM (Frames 65 - 130) -->
+            <div class="scrolly-chapter chapter-2" id="chapter-2">
+                <div class="chapter-content center-focus">
+                    <div class="pill-badge-row">
+                        <span class="tag-pill-lime">IN-SITU SENSING</span>
+                        <span class="tag-pill-lime">ROOT-LEVEL DIELECTRIC</span>
+                    </div>
+                    <h2 class="chapter-heading">
+                        Subsurface Soil Telemetry<br>
+                        at Millimeter Precision.
+                    </h2>
+                    <p class="chapter-desc">
+                        As you descend into the root matrix, capacitive dielectric probes measure high-frequency
+                        electromagnetic permeability, capturing moisture drift hours before plant stress becomes
+                        visible.
+                    </p>
+                    <div class="chapter-telemetry-strip">
+                        <div class="strip-item">
+                            <span class="strip-label">DIELECTRIC CONSTANT</span>
+                            <span class="strip-value">ε = 32.4</span>
+                        </div>
+                        <div class="strip-item">
+                            <span class="strip-label">SAMPLING FREQUENCY</span>
+                            <span class="strip-value">100 Hz</span>
+                        </div>
+                        <div class="strip-item">
+                            <span class="strip-label">ROOT ZONE DEPTH</span>
+                            <span class="strip-value">15 - 45 cm</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NARRATIVE CHAPTER 3: RAIN & SPROUT (Frames 130 - 195) -->
+            <div class="scrolly-chapter chapter-3" id="chapter-3">
+                <div class="chapter-content split-focus">
+                    <div class="macro-hud-markers">
+                        <div class="macro-pin pin-sprout interactive-hud">
+                            <div class="macro-dot-grid">
+                                <span></span><span></span><span></span>
+                                <span></span><span></span><span></span>
+                                <span></span><span></span><span></span>
+                            </div>
+                            <div class="macro-tag">
+                                <div class="macro-tag-title">ROOT ZONE MOISTURE</div>
+                                <div class="macro-tag-val">38.4% • OPTIMAL</div>
+                            </div>
+                        </div>
+                        <div class="macro-pin pin-flux interactive-hud">
+                            <div class="macro-dot-grid">
+                                <span></span><span></span><span></span>
+                                <span></span><span></span><span></span>
+                                <span></span><span></span><span></span>
+                            </div>
+                            <div class="macro-tag">
+                                <div class="macro-tag-title">PERCOLATION FLUX</div>
+                                <div class="macro-tag-val">+1.4 mm/hr • NORMAL</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="macro-content-box glass-panel">
+                        <div class="kicker-tag">REAL-TIME MULTI-MODAL CROSS-VALIDATION</div>
+                        <h2 class="macro-heading">
+                            Eliminating False Triggers Through Environmental Fusion
+                        </h2>
+                        <p class="macro-desc">
+                            When natural precipitation occurs, the on-chip TinyML model cross-references atmospheric
+                            vapor pressure deficit (VPD) against root absorption rates—ensuring irrigation valves only
+                            actuate when true anomalies are detected.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NARRATIVE CHAPTER 4: FOREST CANOPY (Frames 195 - 248) -->
+            <div class="scrolly-chapter chapter-4" id="chapter-4">
+                <div class="chapter-content center-focus">
+                    <div class="kicker-tag">ECOSYSTEM CANOPY INTELLIGENCE</div>
+                    <h2 class="chapter-heading">
+                        Continuous Full-Cycle Autonomy<br>
+                        Across Every Acre.
+                    </h2>
+                    <p class="chapter-desc">
+                        From individual seedling microclimates up to expansive forest and vineyard canopies,
+                        AgriGuardEdge delivers self-healing irrigation networks with zero cloud dependencies.
+                    </p>
+                    <div class="scroll-down-hint">
+                        <span class="hint-text">EXPLORE ARCHITECTURE &amp; HARDWARE</span>
+                        <div class="hint-chevron">↓</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- DOWNSTREAM WEBPAGE CONTENT (UNPINS AND SCROLLS SMOOTHLY AFTER SEQUENCE 1) -->
+    <!-- ========================================================================= -->
+    <main class="downstream-content" id="downstream-content">
+
+        <!-- SECTION 2: NO SPREADSHEETS / STATEMENT -->
+        <section id="problem" class="scene-section statement-scene">
+            <div class="scene-inner statement-layout">
+                <div class="pill-badge-row gsap-statement-badges">
+                    <span class="tag-pill-lime">NO SPREADSHEETS</span>
+                    <span class="tag-pill-lime">NO GUESSWORK</span>
+                    <span class="tag-pill-lime">100% REAL-TIME</span>
+                </div>
+                <h2 class="statement-headline gsap-statement-title">
+                    Just Real, Measured Insight<br>
+                    Delivered with Integrity.
+                </h2>
+                <p class="statement-desc gsap-statement-body">
+                    Traditional agricultural monitoring relies on delayed cloud uploads, manual sampling, or reactive
+                    post-failure inspections. AgriGuardEdge executes deep statistical vector analysis and anomaly
+                    recognition directly on edge silicon in sub-milliseconds.
+                </p>
+
+                <!-- Floating Micro Glass Cards with 3D Tilt Microinteractions -->
+                <div class="parallax-cards-container gsap-parallax-cards">
+                    <div class="floating-glass-card tilt-card card-1">
+                        <div class="card-icon-pill">
+                            <span class="dot-live"></span>
+                            <span>IN-SITU ANALYTICS</span>
+                        </div>
+                        <div class="card-big-metric counter-val" data-target="0.02" data-suffix="ms">0.02ms</div>
+                        <div class="card-caption">On-device inference cycle latency</div>
+                    </div>
+
+                    <div class="floating-glass-card tilt-card card-2">
+                        <div class="card-icon-pill">
+                            <span class="icon-spark">⚡</span>
+                            <span>BANDWIDTH EFFICIENCY</span>
+                        </div>
+                        <div class="card-big-metric counter-val" data-target="90" data-suffix="%">90%</div>
+                        <div class="card-caption">Reduction in unnecessary telemetry transmission</div>
+                    </div>
+
+                    <div class="floating-glass-card tilt-card card-3">
+                        <div class="card-icon-pill">
+                            <span class="icon-spark">🛡️</span>
+                            <span>FAIL-SAFE ACCURACY</span>
+                        </div>
+                        <div class="card-big-metric counter-val" data-target="99.4" data-suffix="%">99.4%</div>
+                        <div class="card-caption">Precision in anomaly vs ambient weather detection</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: REDEFINING THE SYSTEM (IVORY CREAM SECTION) -->
+        <section id="how-it-works" class="scene-section cream-section">
+            <div class="cream-inner">
+                <div class="cream-header gsap-cream-head">
+                    <div class="tag-pill-dark">EDGE ARCHITECTURE</div>
+                    <h2 class="cream-title">
+                        We're Not Just Evolving the System.<br>
+                        We're Redefining It.
+                    </h2>
+                    <p class="cream-sub">
+                        Four core architectural pillars engineered to replace bloated cloud infrastructure with
+                        bulletproof on-field autonomy.
+                    </p>
+                </div>
+
+                <div class="bento-grid gsap-cream-cards">
+                    <!-- Card 01 -->
+                    <div class="bento-card tilt-card">
+                        <div class="bento-top">
+                            <span class="bento-num">01</span>
+                            <span class="bento-badge">ON-DEVICE ML</span>
+                        </div>
+                        <div class="bento-body">
+                            <h3>Real-Time Microcontroller Inference</h3>
+                            <p>Lightweight autoencoders and rolling Z-score statistical engines execute directly on the
+                                ESP32-S3 chip, analyzing continuous moisture curves locally.</p>
+                        </div>
+                        <div class="bento-footer">
+                            <span class="micro-spec">LATENCY &lt; 20ms</span>
+                            <span class="micro-arrow">→</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 02 -->
+                    <div class="bento-card tilt-card">
+                        <div class="bento-top">
+                            <span class="bento-num">02</span>
+                            <span class="bento-badge">MULTI-MODAL FUSION</span>
+                        </div>
+                        <div class="bento-body">
+                            <h3>Capacitive &amp; Atmospheric Cross-Validation</h3>
+                            <p>Correlates underground soil dielectric moisture with DHT11 ambient temperature and
+                                humidity to eliminate false positives caused by surface rain or thermal shocks.</p>
+                        </div>
+                        <div class="bento-footer">
+                            <span class="micro-spec">DUAL-LAYER VERIFICATION</span>
+                            <span class="micro-arrow">→</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 03 -->
+                    <div class="bento-card tilt-card">
+                        <div class="bento-top">
+                            <span class="bento-num">03</span>
+                            <span class="bento-badge">ENERGY OPTIMIZED</span>
+                        </div>
+                        <div class="bento-body">
+                            <h3>Smart Edge Telemetry &amp; Power Throttling</h3>
+                            <p>Eliminates 90% of redundant data uploads by sleeping radio transmitters during steady
+                                states and activating high-frequency bursts only when anomalies emerge.</p>
+                        </div>
+                        <div class="bento-footer">
+                            <span class="micro-spec">UP TO 3-YEAR BATTERY LIFE</span>
+                            <span class="micro-arrow">→</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 04 -->
+                    <div class="bento-card tilt-card">
+                        <div class="bento-top">
+                            <span class="bento-num">04</span>
+                            <span class="bento-badge">CLOSED-LOOP CONTROL</span>
+                        </div>
+                        <div class="bento-body">
+                            <h3>Autonomous Actuation &amp; Relay Cutoff</h3>
+                            <p>Direct hardware relay triggering terminates leaking irrigation lines and isolates
+                                compromised zones instantly without waiting for human intervention.</p>
+                        </div>
+                        <div class="bento-footer">
+                            <span class="micro-spec">ZERO CLOUD DOWNTIME RISK</span>
+                            <span class="micro-arrow">→</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: HARDWARE SUITE (IMAGE SEQUENCE 2 ON AUTO-LOOP) & WAVEFORM SIMULATOR -->
+        <section id="hardware" class="scene-section hardware-scene">
+            <div class="scene-inner hardware-layout">
+                <div class="hardware-header gsap-hw-head">
+                    <div class="kicker-tag">PRECISION HARDWARE SPECIFICATION</div>
+                    <h2 class="section-title">Built for Rugged Field Deployment</h2>
+                    <p class="section-desc">Commercial-grade sensing nodes, edge processors, and precision actuators
+                        designed to withstand extreme agricultural conditions.</p>
+                </div>
+
+                <div class="hardware-interactive-showcase">
+                    <!-- Left: Interactive Hardware Sequence Canvas (Auto-Looping) -->
+                    <div class="hw-visual-wrap gsap-hw-visual">
+                        <div class="hw-canvas-box">
+                            <canvas id="sequence2-canvas"></canvas>
+                            <div class="hw-overlay-badge">
+                                <span class="badge-dot pulsing"></span>
+                                <span>3D LIVE ROTATING CLUSTER (LOOP)</span>
+                            </div>
+                        </div>
+                        <div class="hw-scrub-hint">Hover or click modules to inspect individual perspective</div>
+                    </div>
+
+                    <!-- Right: Hardware Modules List -->
+                    <div class="hw-modules-list gsap-hw-cards">
+                        <!-- Module 1 -->
+                        <div class="hw-card active" data-frame-target="20">
+                            <div class="hw-card-header">
+                                <span class="hw-icon">⚡</span>
+                                <div class="hw-card-titles">
+                                    <h4>ESP32-S3 Microcontroller</h4>
+                                    <span class="hw-sub">Dual-Core Xtensa LX7 @ 240MHz</span>
+                                </div>
+                                <span class="hw-chip-tag">CORE ENGINE</span>
+                            </div>
+                            <p class="hw-card-text">Executes optimized C++ neural kernels and vector analysis on 512KB
+                                SRAM with integrated WiFi &amp; BLE mesh telemetry.</p>
+                        </div>
+
+                        <!-- Module 2 -->
+                        <div class="hw-card" data-frame-target="80">
+                            <div class="hw-card-header">
+                                <span class="hw-icon">🌱</span>
+                                <div class="hw-card-titles">
+                                    <h4>Capacitive Soil Moisture Probe</h4>
+                                    <span class="hw-sub">Corrosion Resistant PCB Sensor</span>
+                                </div>
+                                <span class="hw-chip-tag">DIELECTRIC</span>
+                            </div>
+                            <p class="hw-card-text">Utilizes high-frequency capacitive sensing to measure volumetric
+                                water content without electrolytic degradation.</p>
+                        </div>
+
+                        <!-- Module 3 -->
+                        <div class="hw-card" data-frame-target="150">
+                            <div class="hw-card-header">
+                                <span class="hw-icon">🌡️</span>
+                                <div class="hw-card-titles">
+                                    <h4>DHT11 Atmospheric Sensor</h4>
+                                    <span class="hw-sub">Calibrated Digital Temperature &amp; RH</span>
+                                </div>
+                                <span class="hw-chip-tag">ATMOSPHERE</span>
+                            </div>
+                            <p class="hw-card-text">Captures ambient VPD (Vapor Pressure Deficit) and dew points to
+                                distinguish actual soil dehydration from atmospheric evaporation.</p>
+                        </div>
+
+                        <!-- Module 4 -->
+                        <div class="hw-card" data-frame-target="220">
+                            <div class="hw-card-header">
+                                <span class="hw-icon">🎛️</span>
+                                <div class="hw-card-titles">
+                                    <h4>Optocoupler Relay &amp; Solenoid</h4>
+                                    <span class="hw-sub">10A 250VAC Isolated Actuator</span>
+                                </div>
+                                <span class="hw-chip-tag">ACTUATOR</span>
+                            </div>
+                            <p class="hw-card-text">Provides galvanic isolation and microsecond trigger capability to
+                                shut off high-pressure irrigation valves during anomaly events.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LIVE ANOMALY RADAR SIMULATOR -->
+                <div class="anomaly-simulator-box gsap-sim-box">
+                    <div class="sim-header">
+                        <div class="sim-title-group">
+                            <span class="sim-dot pulsing"></span>
+                            <h3>Live Edge Anomaly Detection Waveform</h3>
+                            <span class="sim-mode-tag">TINYAML INFERENCE ENGINE</span>
+                        </div>
+                        <div class="sim-controls">
+                            <button id="btn-inject-leak" class="sim-btn leak-btn magnetic-btn">Simulate Valve
+                                Leak</button>
+                            <button id="btn-inject-fault" class="sim-btn fault-btn magnetic-btn">Simulate Sensor
+                                Drift</button>
+                            <button id="btn-reset-sim" class="sim-btn reset-btn magnetic-btn">Reset Baseline</button>
+                        </div>
+                    </div>
+                    <div class="sim-canvas-container">
+                        <canvas id="waveform-canvas"></canvas>
+                    </div>
+                    <div class="sim-stats-bar">
+                        <div class="stat-col">
+                            <span class="stat-label">RAW VOLTAGE</span>
+                            <span class="stat-val" id="val-voltage">3.24 V</span>
+                        </div>
+                        <div class="stat-col">
+                            <span class="stat-label">SOIL MOISTURE (VWC)</span>
+                            <span class="stat-val" id="val-moisture">41.2 %</span>
+                        </div>
+                        <div class="stat-col">
+                            <span class="stat-label">ANOMALY SCORE</span>
+                            <span class="stat-val" id="val-score">0.04</span>
+                        </div>
+                        <div class="stat-col">
+                            <span class="stat-label">RELAY STATUS</span>
+                            <span class="stat-val status-green" id="val-relay">OPEN (NORMAL)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: OPERATIONAL BENCHMARKS -->
+        <section id="system-insights" class="scene-section insights-scene">
+            <div class="scene-inner insights-layout">
+                <div class="insights-header gsap-insights-head">
+                    <div class="kicker-tag">OPERATIONAL BENCHMARKS</div>
+                    <h2 class="section-title">Telemetry That Drives Real Value</h2>
+                    <p class="section-desc">Measurable performance metrics proven across field deployments, greenhouse
+                        clusters, and precision vineyards.</p>
+                </div>
+
+                <div class="insights-cards-grid gsap-insights-grid">
+                    <div class="metric-card tilt-card">
+                        <div class="metric-number counter-val" data-target="90" data-suffix="%">90%</div>
+                        <div class="metric-title">Data Uplink Reduction</div>
+                        <p class="metric-desc">Edge filtering eliminates repetitive baseline packets, drastically
+                            cutting cellular eSIM costs and battery draw.</p>
+                        <div class="metric-trend positive">↑ 8.4x Bandwidth Efficiency</div>
+                    </div>
+
+                    <div class="metric-card tilt-card">
+                        <div class="metric-number">&lt; 15ms</div>
+                        <div class="metric-title">Incident Response Time</div>
+                        <p class="metric-desc">Local microcontroller decision loops halt valve leaks before puddling
+                            causes root rot or water waste.</p>
+                        <div class="metric-trend positive">⚡ Zero Cloud Roundtrip</div>
+                    </div>
+
+                    <div class="metric-card tilt-card">
+                        <div class="metric-number counter-val" data-target="35" data-suffix="%">35%</div>
+                        <div class="metric-title">Water Volume Conservation</div>
+                        <p class="metric-desc">Dynamic moisture replenishment prevents over-irrigation while keeping
+                            root dielectric levels perfectly balanced.</p>
+                        <div class="metric-trend positive">💧 2.4M Gallons Preserved</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: MEGA FOOTER & CALL TO ACTION -->
+        <footer id="final-cta" class="scene-section mega-footer-scene">
+            <div class="footer-inner">
+                <!-- Floating Top CTA Card -->
+                <div class="footer-cta-container gsap-footer-cta">
+                    <div class="footer-kicker">GET STARTED WITH AGRIGUARD EDGE</div>
+                    <h2 class="footer-cta-title">
+                        Ready to deploy autonomous precision<br>intelligence on your land?
+                    </h2>
+                    <div class="footer-btn-wrap">
+                        <a href="https://github.com/TheTechTiger/AgriGuardEdge" target="_blank" rel="noopener noreferrer" class="mega-talk-btn magnetic-btn">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                            </svg>
+                            <span>GITHUB REPOSITORY</span>
+                            <span class="talk-arrow">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <path d="M4 8H12M12 8L8.5 4.5M12 8L8.5 11.5" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Typographic Wordmark -->
+                <div class="giant-wordmark-wrap gsap-giant-text">
+                    <h1 class="giant-wordmark">AgriGuardEdge</h1>
+                </div>
+
+                <!-- Structured Footer Navigation Columns -->
+                <div class="footer-meta-grid">
+                    <div class="footer-col brand-info">
+                        <div class="footer-locations">
+                            <span class="loc-item">Pune, Maharashtra</span>
+                            <span class="loc-sub">India</span>
+                        </div>
+                        <div class="footer-repo-link">
+                            <a href="https://github.com/TheTechTiger/AgriGuardEdge" target="_blank" rel="noopener noreferrer" class="repo-badge-link magnetic-btn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                                </svg>
+                                <span>GitHub Repository</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="footer-col">
+                        <h4>SOLUTIONS</h4>
+                        <ul>
+                            <li><a href="#problem">Edge Anomaly Detection</a></li>
+                            <li><a href="#problem">Capacitive Telemetry</a></li>
+                            <li><a href="#problem">Closed-Loop Actuation</a></li>
+                            <li><a href="#problem">Solar Mesh Clustering</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-col">
+                        <h4>TECHNOLOGY</h4>
+                        <ul>
+                            <li><a href="#how-it-works">ESP32-S3 TinyML Kernel</a></li>
+                            <li><a href="#how-it-works">Dielectric Soil Physics</a></li>
+                            <li><a href="#how-it-works">VPD Atmospheric Engine</a></li>
+                            <li><a href="#hardware">Open Hardware Specs</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-col">
+                        <h4>RESOURCES</h4>
+                        <ul>
+                            <li><a href="https://github.com/TheTechTiger/AgriGuardEdge" target="_blank" rel="noopener noreferrer">Firmware GitHub</a></li>
+                            <li><a href="https://github.com/TheTechTiger/AgriGuardEdge#readme" target="_blank" rel="noopener noreferrer">Documentation &amp; API</a></li>
+                            <li><a href="#interactive-simulator">Live Edge Simulator</a></li>
+                            <li><a href="#hardware">Interactive 3D Hardware</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-col">
+                        <h4>CONNECT</h4>
+                        <ul>
+                            <li><a href="https://github.com/TheTechTiger/AgriGuardEdge" target="_blank" rel="noopener noreferrer">GitHub Repository</a></li>
+                            <li><a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+                            <li><a href="https://twitter.com" target="_blank" rel="noopener noreferrer">Twitter / X</a></li>
+                            <li><a href="#final-cta">Contact Team</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Bottom Copyright & Back to Top Bar -->
+                <div class="footer-bottom-bar">
+                    <div class="copyright-text">
+                        <svg width="18" height="18" viewBox="0 0 28 28" fill="none" class="inline-logo">
+                            <path d="M14 2L26 8V20L14 26L2 20V8L14 2Z" stroke="#B6F36A" stroke-width="2.2"
+                                stroke-linejoin="round" />
+                            <circle cx="14" cy="14" r="4.5" fill="#B6F36A" />
+                        </svg>
+                        <span>&copy; 2026 AgriGuardEdge Inc. All rights reserved.</span>
+                    </div>
+
+                    <div class="footer-center-credit">
+                        <span>Autonomous Edge Agronomy</span>
+                    </div>
+
+                    <button id="btn-back-to-top" class="back-to-top-btn magnetic-btn">
+                        <span>Back to top</span>
+                        <span class="top-arrow">↑</span>
+                    </button>
+                </div>
+            </div>
+        </footer>
+
+    </main>
+
+    <!-- GSAP & ScrollTrigger CDN Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
