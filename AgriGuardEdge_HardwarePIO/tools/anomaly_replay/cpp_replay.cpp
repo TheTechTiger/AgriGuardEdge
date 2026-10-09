@@ -4,7 +4,7 @@
  * NaN temp/rh = DHT dropout. Output (stdout CSV):
  *   idx,event,severity,state,z,cusum_up,cusum_down   (only on change rows
  *   where health or step emits non-NONE, plus final state line)
- * Build: g++ -std=c++17 -Wall -O2 -I../../firmware/common cpp_replay.cpp -o cpp_replay
+ * Build: g++ -std=c++17 -Wall -O2 -I../../../firmware/common cpp_replay.cpp -o cpp_replay
  */
 #include <cstdio>
 #include <cmath>

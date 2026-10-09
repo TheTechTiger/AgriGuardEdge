@@ -7,13 +7,10 @@
 			"path": "AgriGuardEdge_Website"
 		},
 		{
+			"path": "datasets"
+		},
+		{
 			"path": "docs"
-		},
-		{
-			"path": "firmware"
-		},
-		{
-			"path": "tools"
 		}
 	],
 	"settings": {}

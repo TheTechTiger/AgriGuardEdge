@@ -4,7 +4,7 @@
   python3 replay.py --synthetic-hours 48 --inject stress,external_event --report out/
   python3 replay.py --sweep --report out/
 
-Stdlib only. Behavioral mirror (ag_mirror.py) of firmware/common/
+Stdlib only. Behavioral mirror (ag_mirror.py) of AgriGuardEdge_HardwarePIO/firmware/common/
 anomaly_core.h; test_parity.py checks the mirror against the compiled
 header via cpp_replay. If --csv is omitted or headers are unrecognised,
 falls back to a synthetic diurnal signal (documented fallback, §12.3).

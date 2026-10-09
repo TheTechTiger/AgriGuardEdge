@@ -1,6 +1,6 @@
-firmware/test/test_core
-tools/anomaly_replay/cpp_replay
-tools/anomaly_replay/out/
+AgriGuardEdge_HardwarePIO/firmware/test/test_core
+AgriGuardEdge_HardwarePIO/tools/anomaly_replay/cpp_replay
+AgriGuardEdge_HardwarePIO/tools/anomaly_replay/out/
 AgriGuardEdge_HardwarePIO/.pio/
 __pycache__/
 *.pyc

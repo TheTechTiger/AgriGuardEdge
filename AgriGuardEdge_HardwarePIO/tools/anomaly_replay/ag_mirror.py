@@ -1,7 +1,7 @@
-"""Python behavioral mirror of firmware/common/anomaly_core.h.
+"""Python behavioral mirror of AgriGuardEdge_HardwarePIO/firmware/common/anomaly_core.h.
 
 Used by replay.py for fast metrics/sweeps. The C++ header remains the
-normative implementation (firmware + tools/anomaly_replay/cpp_replay.cpp);
+normative implementation (AgriGuardEdge_HardwarePIO/firmware + tools/anomaly_replay/cpp_replay.cpp);
 test_parity.py checks this mirror agrees with the compiled header on the
 injection suite. Keep constants in sync with the header by hand — they are
 listed in one block below so a diff is trivial.
