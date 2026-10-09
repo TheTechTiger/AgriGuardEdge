@@ -117,10 +117,7 @@ def _q(s):
 
 def _store_ingest(device, kind, data, now, msg_id):
     # Single writer for device-shaped payloads (§8): messages + derived
-    # events / probe_results / summaries / energy_log rows. Shared by
-    # /api/ingest (real node) and /api/scenario (demo synthesiser) so the
-    # dashboard reads identical shapes either way — demo rows differ only
-    # in evidence.demo=True and a 'demo:...' msg_id.
+    # events / probe_results / summaries / energy_log rows.
     payload = json.dumps(data).replace("'", "''")
     SQL_SetData(
         "INSERT OR IGNORE INTO messages (msg_id, received_at, device_id, kind, payload) "
@@ -213,144 +210,6 @@ def api_ack():
     SQL_SetData(f"UPDATE events SET ack_state='ACK' WHERE id={ev_id}")
     return jsonify({"success": True})
 
-# DEMO SYNTHESISER — one-click fault injection for the dashboard (§11).
-# Demo-only and honestly labeled: every synthesised row carries
-# evidence.demo=True and a 'demo:...' msg_id. Numbers mirror
-# anomaly_core.h exactly — retention bands R: >1.15 drift / ≥0.80 OK /
-# ≥0.45 partial / ≥0.05 leak-or-bypass / else severe; leak ε 0.30 L/min;
-# reference retention r_ref 0.86. On real hardware this block is replaced
-# by the node; the dashboard reads identical shapes either way.
-DEMO_SEQ = [0]
-
-
-def _demo_summary(device, t, moisture, msgs_sent):
-    DEMO_SEQ[0] += 1
-    tag = f"demo:summary:{int(t)}:{DEMO_SEQ[0]}"
-    _store_ingest(device, "summary", {
-        "device_id": device, "kind": "summary",
-        "window": {"avg_moisture": moisture, "min": round(moisture - 3, 2),
-                   "max": round(moisture + 3, 2), "std": 0.9,
-                   "avg_temp": 26.4, "avg_rh": 61.0},
-        "energy": {"vbat": 12.1, "soc_pct": 100, "mah_today": 229.4},
-        "savings": {"readings_generated": 15, "messages_sent": msgs_sent,
-                    "suppressed": 15 - msgs_sent},
-    }, t, tag)
-
-
-def _demo_event(device, t, kind, event, severity, evidence):
-    DEMO_SEQ[0] += 1
-    tag = f"demo:{event}:{int(t)}:{DEMO_SEQ[0]}"
-    evidence = dict(evidence)
-    evidence["demo"] = True
-    _store_ingest(device, kind, {
-        "device_id": device, "kind": kind,
-        "event": event, "severity": severity, "evidence": evidence,
-    }, t, tag)
-
-
-def _ensure_demo_baseline(device):
-    # First click populates ~7.5 h of 15-min history so the trace, band
-    # (±2σ needs >3 rows) and energy panels render immediately.
-    n = SQL_Get_ASSOC_DATA("SELECT COUNT(*) AS n FROM summaries")[0]["n"]
-    if n >= 8:
-        return False
-    now = time.time()
-    for i in range(30, 0, -1):
-        m = round(41.8 + ((i * 37) % 11 - 5) * 0.18, 2)
-        _demo_summary(device, now - i * 900, m, 1 if i % 3 == 0 else 0)
-    return True
-
-
-def _run_demo_scenario(device, name):
-    # Insert the rows a real node would emit for this §11 demo step.
-    # Timestamps stagger +1 s so the verdict is always "latest".
-    _ensure_demo_baseline(device)
-    t = time.time()
-    if name == "probe_ok":
-        _demo_summary(device, t + 1, 42.6, 3)
-        _demo_event(device, t + 2, "probe_result", "IRRIGATION_OK", "NONE", {
-            "state": "NORMAL", "z_soil": 0.4, "cusum_up": 0.3, "cusum_down": 0.0,
-            "slope_30s": 0.31, "slope_300s": 0.12,
-            "baseline_moist": 41.8, "sigma": 0.9, "deficit": 0.0,
-            "V_delivered_ml": 250.0, "V_soil_delta_ml": 211.9, "V_et_ml": 3.1,
-            "residual_ratio": 0.14, "ratio_vs_reference": 1.0,
-            "flow_rate_lpm": 4.2, "pump_state": "OFF",
-            "flow_calibrated_ppl": 450, "cadence_s": 60})
-    elif name == "continuous_leak":
-        _demo_summary(device, t + 1, 41.5, 2)
-        _demo_event(device, t + 2, "alert", "CONTINUOUS_LEAK", "HIGH", {
-            "state": "ALARM", "z_soil": -0.4, "cusum_up": 0.0, "cusum_down": 0.2,
-            "baseline_moist": 41.8, "sigma": 0.9, "deficit": 0.5,
-            "flow_rate_lpm": 1.4, "pump_state": "OFF",
-            "flow_calibrated_ppl": 450, "cadence_s": 5,
-            "reason": "pump OFF but flow 1.4 L/min > leak eps 0.3 — moisture still normal, flow caught it"})
-    elif name == "leak_probe":
-        _demo_summary(device, t + 1, 38.7, 3)
-        _demo_event(device, t + 2, "probe_result", "LEAK_OR_BYPASS", "HIGH", {
-            "z_soil": -3.4, "cusum_up": 0.0, "cusum_down": 6.2,
-            "slope_30s": 0.0, "slope_300s": -0.11,
-            "baseline_moist": 41.8, "sigma": 0.9, "deficit": 5.1,
-            "V_delivered_ml": 250.0, "V_soil_delta_ml": 38.2, "V_et_ml": 3.1,
-            "residual_ratio": 0.835, "ratio_vs_reference": 0.19,
-            "flow_rate_lpm": 0.0, "pump_state": "OFF",
-            "flow_calibrated_ppl": 450,
-            "state": "ALARM", "state_age_s": 240, "cadence_s": 5})
-    elif name == "blockage":
-        _demo_summary(device, t + 1, 39.9, 2)
-        _demo_event(device, t + 2, "alert", "BLOCKAGE_NO_FLOW", "HIGH", {
-            "state": "ALARM", "z_soil": -2.1, "cusum_up": 0.0, "cusum_down": 3.4,
-            "baseline_moist": 41.8, "sigma": 0.9, "deficit": 2.0,
-            "flow_rate_lpm": 0.0, "pump_state": "ON",
-            "flow_calibrated_ppl": 450, "cadence_s": 5,
-            "reason": "pump ON but flow ~0 for 3 evals — kink downstream of meter reads as blockage, not leak"})
-    elif name == "unplug_probe":
-        _demo_summary(device, t + 1, 41.8, 2)
-        _demo_event(device, t + 2, "alert", "SENSOR_DISCONNECTED", "MED", {
-            "state": "ALARM", "z_soil": 0.0, "cusum_up": 0.0, "cusum_down": 0.0,
-            "baseline_moist": 41.8, "sigma": 0.9, "deficit": 0.0,
-            "adc_raw": 4095, "flow_rate_lpm": 0.0, "pump_state": "OFF",
-            "cadence_s": 60,
-            "reason": "ADC railed at 4095 — probe disconnected, quarantined before analytics"})
-    elif name == "rain":
-        _demo_summary(device, t + 1, 49.0, 1)
-        _demo_event(device, t + 2, "alert", "EXTERNAL_EVENT", "INFO", {
-            "state": "NORMAL", "z_soil": 8.0, "cusum_up": 0.0, "cusum_down": 0.0,
-            "baseline_moist": 41.8, "sigma": 0.9, "deficit": 0.0,
-            "flow_rate_lpm": 0.0, "pump_state": "OFF",
-            "rain_blank_active": True,
-            "reason": "+8σ step with decay — rain blanking 48 evals, baseline frozen, NO alert by design"})
-    else:  # baseline soak (and any unknown name): quiet in-band summary
-        _demo_summary(device, t + 1, 41.8, 1)
-
-
-@app.route("/api/scenario", methods=["POST"])
-def api_scenario():
-    # Demo scenario launcher (§11): timeline marker + the rows a real node
-    # would emit for this step, so every button visibly moves every panel.
-    if "userID" not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-    data = request.get_json(silent=True) or {}
-    device = data.get("device_id", "esp32_01").replace("'", "''")
-    name = data.get("scenario", "baseline").replace("'", "''")
-    now = time.time()
-    evidence = json.dumps({"scenario": name}).replace("'", "''")
-    SQL_SetData(
-        "INSERT INTO events (device_id, received_at, event, severity, state, evidence) "
-        f"VALUES ('{device}', {now}, 'EXTERNAL_EVENT', 'INFO', 'SCENARIO', '{evidence}')")
-    _run_demo_scenario(device, name)
-    return jsonify({"success": True, "scenario": name})
-
-
-@app.route("/api/demo/reset", methods=["POST"])
-def api_demo_reset():
-    # Demo-only: wipe ingest-derived tables for a repeatable run.
-    # Auth + notifications untouched.
-    if "userID" not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-    for tbl in ("messages", "events", "summaries", "energy_log", "probe_results"):
-        SQL_SetData(f"DELETE FROM {tbl}")
-    return jsonify({"success": True})
-
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "service": "AgriGuardEdge"}), 200
@@ -366,7 +225,99 @@ def api_status():
                     "online": (time.time() - last) < 4500 if last else False,
                     "messages": rows[0]["n"] if rows else 0}), 200
 
+# WS HUB — realtime pump test. ESP links as a websocket CLIENT (NAT-free
+# on the LAN); browsers link as UI. Server relays pump UI→ESP, flow
+# ESP→UI, presence both ways, and pings ESPs every 10 s (their dead-man
+# switch). Port 8765, all interfaces. Local-demo trust model: no auth.
+import asyncio as _asyncio
+import threading as _threading
+WS_PORT = 8765
+_hub = {"esps": {}, "uis": set()}
+
+
+async def _ws_send(ws, obj):
+    try:
+        await ws.send(json.dumps(obj))
+    except Exception:
+        pass
+
+
+async def _ws_bcast_ui(obj):
+    for u in list(_hub["uis"]):
+        await _ws_send(u, obj)
+
+
+async def _ws_handler(ws, *a):
+    role, device = None, "esp32_01"
+    try:
+        async for raw in ws:
+            try:
+                m = json.loads(raw)
+            except Exception:
+                continue
+            if m.get("role") == "esp":
+                device = str(m.get("device", device))
+                role = "esp"
+                _hub["esps"][device] = ws
+                await _ws_bcast_ui({"type": "esp", "device": device, "online": True})
+                continue
+            if m.get("role") == "ui":
+                role = "ui"
+                _hub["uis"].add(ws)
+                for d in _hub["esps"]:
+                    await _ws_send(ws, {"type": "esp", "device": d, "online": True})
+                continue
+            t = m.get("type")
+            if t == "pump" and role == "ui":
+                w = _hub["esps"].get(str(m.get("device", device)))
+                if w:
+                    await _ws_send(w, {"type": "pump", "on": bool(m.get("on"))})
+            elif t == "flow" and role == "esp":
+                d = str(m.get("device", device))
+                for u in list(_hub["uis"]):
+                    await _ws_send(u, {"type": "flow", "device": d,
+                                       "t": m.get("t"), "flow_lpm": m.get("flow_lpm"),
+                                       "vol_ml": m.get("vol_ml"), "pump": m.get("pump")})
+    finally:
+        if role == "esp":
+            if _hub["esps"].get(device) is ws:
+                del _hub["esps"][device]
+            await _ws_bcast_ui({"type": "esp", "device": device, "online": False})
+        if role == "ui":
+            _hub["uis"].discard(ws)
+
+
+async def _ws_ping():
+    while True:
+        await _asyncio.sleep(10)
+        for w in list(_hub["esps"].values()):
+            await _ws_send(w, {"type": "ping"})
+
+
+async def _ws_main():
+    from websockets.asyncio.server import serve
+    async with serve(_ws_handler, "0.0.0.0", WS_PORT):
+        await _ws_ping()
+
+
+def _ws_start():
+    try:
+        import websockets  # noqa: F401
+    except ImportError:
+        print("[ws] websockets lib missing — realtime hub disabled")
+        return
+
+    def run():
+        loop = _asyncio.new_event_loop()
+        _asyncio.set_event_loop(loop)
+        loop.run_until_complete(_ws_main())
+
+    _threading.Thread(target=run, daemon=True).start()
+    print(f"[ws] hub on 0.0.0.0:{WS_PORT}", flush=True)
+
+
 if __name__ == "__main__":
+    _ws_start()  # realtime pump-test hub (:8765); no-op if lib missing
     app.run(debug=True, host="0.0.0.0", port=82)
 
 exit()

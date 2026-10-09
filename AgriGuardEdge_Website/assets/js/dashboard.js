@@ -229,25 +229,62 @@ async function refresh() {
 document.addEventListener("DOMContentLoaded", () => {
   refresh();
   setInterval(refresh, 15000);
-  document.querySelectorAll("#scenarioBtns button[data-scenario]").forEach((b) =>
-    b.addEventListener("click", async () => {
-      await fetch("/api/scenario", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scenario: b.dataset.scenario }),
-      });
-      refresh();
-      setTimeout(refresh, 600); // second pass once the rows commit
-    })
-  );
-  const reset = document.querySelector("#resetDemo");
-  if (reset) reset.addEventListener("click", async () => {
-    await fetch("/api/demo/reset", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{}",
-    });
-    refresh();
-    setTimeout(refresh, 600);
-  });
+});
+
+/* ---- Realtime pump test (websocket hub :8765) ---- */
+let pumpWs = null;
+
+function pumpSet(upd) {
+  const set = (id, txt, cls) => {
+    const n = document.querySelector(id);
+    if (!n) return;
+    if (txt !== undefined) n.textContent = txt;
+    if (cls) n.className = cls;
+  };
+  if (upd.flow_lpm !== undefined)
+    set("#pumpLive", (+upd.flow_lpm).toFixed(2) + " L/min");
+  if (upd.vol_ml !== undefined) set("#pumpVol", Math.round(+upd.vol_ml));
+  if (upd.pump !== undefined)
+    set("#pumpBadge", upd.pump ? "ON" : "OFF",
+        "badge " + (upd.pump ? "bg-danger" : "bg-secondary"));
+  if (upd.online !== undefined) {
+    set("#espBadgeWs", upd.online ? "online" : "offline",
+        "badge " + (upd.online ? "bg-success" : "bg-secondary"));
+    set("#wsDot", "●", "badge " + (upd.online ? "bg-success" : "bg-secondary"));
+  }
+}
+
+function pumpSend(on) {
+  if (pumpWs && pumpWs.readyState === 1)
+    pumpWs.send(JSON.stringify({ type: "pump", device: "esp32_01", on: !!on }));
+}
+
+function pumpConnect() {
+  let url;
+  try {
+    url = "ws://" + location.hostname + ":8765";
+    pumpWs = new WebSocket(url);
+  } catch (e) {
+    setTimeout(pumpConnect, 3000);
+    return;
+  }
+  pumpWs.onopen = () => pumpWs.send(JSON.stringify({ role: "ui" }));
+  pumpWs.onmessage = (ev) => {
+    let m;
+    try { m = JSON.parse(ev.data); } catch (e) { return; }
+    if (m.type === "flow") pumpSet(m);
+    else if (m.type === "esp") pumpSet({ online: m.online });
+  };
+  pumpWs.onclose = () => {
+    pumpSet({ online: false });
+    setTimeout(pumpConnect, 3000);
+  };
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  pumpConnect();
+  const on = document.querySelector("#pumpOn");
+  const off = document.querySelector("#pumpOff");
+  if (on) on.addEventListener("click", () => pumpSend(true));
+  if (off) off.addEventListener("click", () => pumpSend(false));
 });

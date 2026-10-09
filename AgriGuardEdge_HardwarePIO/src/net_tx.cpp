@@ -7,6 +7,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "net_tx.h"
+#include "ws_link.h"
 #include "config.h"
 
 #define TX_SLOT 512
@@ -47,6 +48,7 @@ static bool wifi_up(void) {
 }
 
 static void wifi_down(void) {
+  if (ws_wants_radio()) return;  // realtime link owns the radio right now
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
 }

@@ -28,9 +28,16 @@ after first use.
 | `GET /api/events` · `/api/summary` · `/api/energy` · `/api/probes` | Dashboard data (`?device_id=esp32_01`) |
 | `GET /api/status` | Node last-seen / online (from ingest, no legacy tables) |
 | `POST /api/ack` | Acknowledge an alert (login required) |
-| `POST /api/scenario` | Demo fault injection (§11, demo-only): timeline marker **plus** the exact summary/probe/alert rows a real node would emit (tagged `demo` in evidence); first call seeds ~7.5 h baseline history (login required) |
-| `POST /api/demo/reset` | Wipe ingest-derived tables for a repeatable demo run (login required) |
 | `GET /health` | Liveness |
+
+## Realtime pump test (websocket hub :8765)
+
+`app.py` also runs an asyncio hub (thread, `websockets` lib): the ESP
+links as a **client** (`{"role":"esp"}`), browsers as UI (`{"role":"ui"}`).
+Pump toggle → relay on the node; flow frames (1 Hz) stream back to the
+Pump Test card. Server pings ESPs every 10 s; the node auto-stops the
+pump after 120 s or 15 s of silence (dead-man switch, enforced on the
+ESP, not the server). Local-demo trust: no auth on the socket.
 
 ## Dashboard panels (arch §9)
 
@@ -38,7 +45,7 @@ Live soil trace + baseline band (from summaries) · conservation bars
 (from probe results, residual coloured by verdict) · flow strip (flow
 evidence on alerts/probes, leak-ε line) · CUSUM state ladder · alert
 stream with expandable evidence + ack · energy/bandwidth (generated vs
-sent) · scenario launcher (§11).
+sent) · field demo guide (§11, physical steps only — no synthetic data).
 
 ## Storage
 

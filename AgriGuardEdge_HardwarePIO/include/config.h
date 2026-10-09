@@ -9,11 +9,16 @@
 #pragma once
 #include <stdint.h>
 
-// ---------- Identity / backend ----------
+// ---------- Identity / backend (laptop hardcoded per bench setup) ----------
 #define AG_DEVICE_ID   "esp32_01"
-#define AG_BACKEND_URL "http://192.168.1.10:82/api/ingest"  // ← demo hotspot IP
-#define AG_WIFI_SSID   "AgriGuardDemo"
-#define AG_WIFI_PASS   "demo-pass"
+#define AG_SERVER_HOST "192.168.1.14"
+#define AG_BACKEND_URL "http://192.168.1.14:82/api/ingest"
+#define AG_WS_PORT     8765
+#define AG_WIFI_SSID   "10106629022"
+#define AG_WIFI_PASS   "10106629022"
+// Manual pump-test safety: auto-off after this long, or 15 s after the last
+// server contact (dead-man switch). Test rig only, needs primed water.
+#define AG_PUMP_TEST_MAX_S 120
 
 // ---------- Pins ----------
 #define PIN_SOIL_ADC   1   // ADC1_CH0, resistive probe AO (gated)

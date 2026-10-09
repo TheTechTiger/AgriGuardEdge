@@ -18,7 +18,8 @@ design reference.
 | `src/flow_pcnt.*` | ZJ-S201 capture: PCNT hardware unit, ISR-poll fallback, EMA rate + volume |
 | `src/sensors.*` | Power-gated soil/battery (200 ms bursts), bit-bang DHT11, relay |
 | `src/ui_tft.*` | LVGL 9, 4 screens (LIVE / CONSERVATION / PROBE / ALERTS), backlight always on |
-| `src/net_tx.*` | WiFi connect→send→disconnect, PSRAM 256-slot ring, idempotent `msg_id`, backoff |
+| `src/net_tx.*` | WiFi connect→send→disconnect, PSRAM 256-slot ring, idempotent `msg_id`, backoff (yields radio to WS link) |
+| `src/ws_link.*` | Websocket client to the laptop hub: pump override in, flow frames out, dead-man auto-off |
 | `include/config.h` | Pins, calibration, TX policy — **edit this for your bench** |
 | `include/lv_conf.h` | LVGL config (200 ms refresh, no animations) |
 | `firmware/common/anomaly_core.h` | THE detector, pure C++ — shared with the host harness, single source of truth |

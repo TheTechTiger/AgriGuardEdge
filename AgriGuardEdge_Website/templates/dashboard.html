@@ -32,19 +32,31 @@ content %}
                 </div>
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Scenario Launcher</h5>
-                        <div class="d-grid gap-2" id="scenarioBtns">
-                            <button class="btn btn-outline-primary btn-sm" data-scenario="baseline">1 · Baseline soak</button>
-                            <button class="btn btn-outline-primary btn-sm" data-scenario="probe_ok">2 · Normal probe (250 mL)</button>
-                            <button class="btn btn-outline-danger btn-sm" data-scenario="continuous_leak">3 · ★ Loosen fitting (pump OFF)</button>
-                            <button class="btn btn-outline-danger btn-sm" data-scenario="leak_probe">4 · ★ Crack fitting + probe</button>
-                            <button class="btn btn-outline-warning btn-sm" data-scenario="blockage">5 · Kink hose + probe</button>
-                            <button class="btn btn-outline-secondary btn-sm" data-scenario="unplug_probe">6 · Unplug soil probe</button>
-                            <button class="btn btn-outline-secondary btn-sm" data-scenario="rain">9 · Simulate rain (no alert)</button>
-                            <hr class="my-1" />
-                            <button class="btn btn-outline-dark btn-sm" id="resetDemo">Reset demo data</button>
+                        <h5 class="card-title">Pump Test <span>· LIVE via websocket</span></h5>
+                        <h4><span id="wsDot" class="badge bg-secondary">●</span>
+                            <span id="pumpLive" class="display-6">— L/min</span></h4>
+                        <p class="small text-muted mb-1">vol <span id="pumpVol">0</span> mL ·
+                            pump <span id="pumpBadge" class="badge bg-secondary">?</span> ·
+                            node <span id="espBadgeWs" class="badge bg-secondary">offline</span></p>
+                        <div class="d-grid gap-2 d-md-flex">
+                            <button class="btn btn-danger btn-sm" id="pumpOn">Pump ON</button>
+                            <button class="btn btn-outline-secondary btn-sm" id="pumpOff">Pump OFF</button>
                         </div>
-                        <p class="small text-muted mt-2 mb-0">Demo-only: buttons inject the exact rows a real node would emit (tagged <code>demo</code> in evidence). Reset wipes them for a clean run.</p>
+                        <p class="small text-muted mt-2 mb-0">Test rig only: auto-stops after 120 s or if the link drops &gt;15 s. Needs a primed water loop.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Field Demo Guide <span>/ §11, physical</span></h5>
+                        <ol class="small mb-0 ps-3">
+                            <li>Soak 10 min — trace inside band</li>
+                            <li>Hold BOOT 3 s — reference probe</li>
+                            <li>Loosen fitting, pump OFF — <code>CONTINUOUS_LEAK</code></li>
+                            <li>Crack fitting + wait 4 h (or stress) — <code>LEAK_*</code></li>
+                            <li>Kink hose — <code>BLOCKAGE_NO_FLOW</code></li>
+                            <li>Unplug probe — sensor fault</li>
+                            <li>Pour water — <code>EXTERNAL_EVENT</code>, no alert</li>
+                        </ol>
                     </div>
                 </div>
             </div>

@@ -14,6 +14,7 @@
 #include "sensors.h"
 #include "ui_tft.h"
 #include "net_tx.h"
+#include "ws_link.h"
 
 // ---------- RTC-persisted detector (deep-sleep safe, ~600 B) ----------
 RTC_DATA_ATTR static ag_core_t rtc_core;
@@ -28,10 +29,11 @@ RTC_DATA_ATTR static uint8_t rtc_probe_n = 0;
 static Preferences prefs;
 static ag_config_t cfg;
 static uint32_t boot_count = 0;
-static int summary_div = 0;
 static char alert_ring[3][96];
 // Summary scheduling must survive deep sleep → RTC (uptime seconds).
 RTC_DATA_ATTR static uint32_t rtc_last_summary_up = 0;
+RTC_DATA_ATTR static uint32_t rtc_last_probe_up = 0;
+RTC_DATA_ATTR static int rtc_summary_div = 0;
 // Summary window accumulators (RTC: a 15-min window spans deep sleeps).
 RTC_DATA_ATTR static float rtc_wsum = 0, rtc_wsum2 = 0;
 RTC_DATA_ATTR static float rtc_wmin = 1e9f, rtc_wmax = -1e9f;
@@ -141,6 +143,7 @@ void setup() {
   flow_init(ppl);
   flow_reset_volume();  // re-baseline after any sleep reset
   tx_init();
+  ws_init();  // realtime pump-test link (non-blocking; reconnects itself)
   ui_init();
   // Splash only on real boot — deep-sleep timer wakes go straight to LIVE
   // so the 60 s cadence isn't eaten by animation.
@@ -154,6 +157,7 @@ void setup() {
 
 // One controlled-volume probe: pump to V_target, observe, conserve.
 static void probe_cycle(bool mark_reference) {
+  rtc_probing = 1;
   Serial.println("{\"probe\":\"start\"}");
   flow_power(true);
   pump_cmd(true);
@@ -175,6 +179,7 @@ static void probe_cycle(bool mark_reference) {
       tx_json("alert", "BLOCKAGE_NO_FLOW", "HIGH", &r, batt_read(), 0, 1);
       note_alert("BLOCKAGE_NO_FLOW", "HIGH");
       tx_flush();
+      rtc_last_probe_up = uptime_s(); rtc_probing = 0;
       return;  // pump ON, volume never arrived (§5.7)
     }
     delay(1000);
@@ -216,15 +221,19 @@ static void probe_cycle(bool mark_reference) {
   ui_update(&s);
   ui_show(1);
   delay(8000);
+  rtc_last_probe_up = uptime_s(); rtc_probing = 0;
 }
 
 void loop() {
   static uint32_t eval_ms = 0;
+  static int8_t prev_man = -1;
+  ws_tick(uptime_s());  // realtime link first: needs every pass, not just evals
 #if AG_DEMO_LIVE_1S
   uint32_t cadence = 1;  // demo: fresh sensor values on screen every second
 #else
   uint32_t cadence = ag_cadence_s(rtc_core.state, rtc_probing);
 #endif
+  if (ws_manual() >= 0) cadence = 1;  // manual pump test streams realtime
   if (millis() - eval_ms < cadence * 1000UL && eval_ms) {
     // button: short press cycles screens
     if (digitalRead(PIN_BUTTON) == LOW) {
@@ -253,6 +262,15 @@ void loop() {
   bool dht_ok = dht_read(&t, &rh);
   flow_power(true);
   float rate = flow_poll((float)cadence);
+  // Manual override (websocket pump test) wins over everything except an
+  // active probe cycle. Rising edge zeroes the test volume.
+  int8_t man = ws_manual();
+  if (man >= 0) {
+    if (prev_man < 0) flow_reset_volume();
+    pump_cmd(man ? true : false);
+    flow_power(true);
+  }
+  prev_man = man;
   bool pump_on = digitalRead(PIN_RELAY);
   if (!rtc_probing && !pump_on) flow_power(false);  // gate when idle
 
@@ -298,14 +316,26 @@ void loop() {
   // ---- summaries: fixed 15 min, adaptive sends every 4th unless active ----
   if (uptime_s() - rtc_last_summary_up > AG_SUMMARY_EVERY_S) {
     rtc_last_summary_up = uptime_s();
-    summary_div++;
+    rtc_summary_div++;
     bool active = rtc_core.cusum_up > 0.1f || rtc_core.cusum_down > 0.1f ||
                   rtc_core.state != AG_ST_NORMAL;
-    if (active || (summary_div % AG_ADAPTIVE_DIV) == 0) {
+    if (active || (rtc_summary_div % AG_ADAPTIVE_DIV) == 0) {
       ag_result_t rs = {};
       tx_json("summary", NULL, NULL, &rs, vbat, rate, pump_on);
       tx_flush();
     }
+  }
+
+  // ---- probe scheduler: periodic audit + stress-triggered diagnosis ----
+  // NEVER runs without a primed water loop (AG_PROBE_EVERY_S duty). A fresh
+  // WATER_STRESS verdict also interrogates the field, with a 30-min
+  // cooldown so a latched ALARM can't pump every evaluation.
+  bool stress_now = (ev_name && !strcmp(ev_name, "WATER_STRESS"));
+  if (man < 0 && !rtc_probing && !pump_on &&
+      (uptime_s() - rtc_last_probe_up > AG_PROBE_EVERY_S ||
+       (stress_now && uptime_s() - rtc_last_probe_up > 1800))) {
+    probe_cycle(false);
+    last_interact_ms = millis();
   }
 
   // ---- UI ----
@@ -316,12 +346,15 @@ void loop() {
              : (r.event != AG_EV_NONE ? ag_event_name(r.event) : "OK");
   us.pump_on = pump_on;
   us.alert0 = alert_ring[0]; us.alert1 = alert_ring[1]; us.alert2 = alert_ring[2];
-  us.bw_saved_pct = 96.0f;
+  { uint32_t st = tx_sent_total(), sp = tx_suppressed_total();
+    us.bw_saved_pct = (st + sp) ? (100.0f * sp / (st + sp)) : 0; }
   us.next_tx_s = (rtc_last_summary_up + AG_SUMMARY_EVERY_S > uptime_s())
                      ? (rtc_last_summary_up + AG_SUMMARY_EVERY_S - uptime_s())
                      : 0;
   ui_update(&us);
   ui_power_tick(rtc_core.state, rtc_probing, last_interact_ms);
+  if (man >= 0)  // manual session: stream every evaluation (1 s)
+    ws_send_flow(uptime_s(), rate, flow_volume_ml(), pump_on);
 
   // ---- sleep: deep in NORMAL, light delay otherwise ----
   // Honest deviation from §5.1's comment: on the S3 the PCNT is NOT an RTC
@@ -334,7 +367,8 @@ void loop() {
 #if AG_DEMO_LIVE_1S
   delay(50);  // demo: no sleep, screen stays live at 1 s cadence
 #else
-  if (rtc_core.state == AG_ST_NORMAL && !rtc_probing) {
+  if (rtc_core.state == AG_ST_NORMAL && !rtc_probing && ws_manual() < 0 &&
+      (ws_linked_once() || uptime_s() > 180)) {
     uint32_t slept = cadence > 5 ? cadence - 5 : cadence;  // 5 s for TX/UI
     Serial.printf("{\"sleep\":%u}\n", slept);
     tft_drain_wait();

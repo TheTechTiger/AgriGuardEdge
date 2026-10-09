@@ -79,3 +79,24 @@ Found by testing, not by opinion. Each item quotes the arch section it deviates 
     uses the legacy `pcnt` driver (unit 0, int16 counter, 100-cycle
     glitch filter) — same peripheral, same claim. Boot log `"pcnt":1`
     proves it; ISR poll remains the fallback.
+16. **Demo synthesis removed for the production lock-in.** Dashboard
+    scenario buttons (synthetic node-shaped rows) and `/api/demo/reset`
+    are gone; the launcher is a physical §11 checklist. Firmware demo
+    flags (`AG_DEMO_DISPLAY_ON`, `AG_DEMO_LIVE_1S`) are 0, bandwidth
+    percentage is computed from TX counters, summary scheduling is RTC,
+    and probe cycles run on a 4-hour scheduler plus stress-triggered
+    diagnosis (30-min cooldown) — the conservation gate finally runs
+    on-device, not just in replay.
+17. **Remote pump test over websocket (fully integrated).** ESP is a WS
+    client of `ws://laptop:8765` (SSID/pass + laptop IP hardcoded in
+    `config.h`); dashboard Pump Test card toggles the relay, flow
+    streams back at 1 Hz. Node-side dead-man (120 s max, 15 s silence)
+    and link-loss pump-off. Measured on hardware: ON → flow ramped
+    0→0.27 L/min, 31 mL integrated, OFF clean — but 0.27 L/min is deep
+    in the meter's sub-1 L/min blind zone (priming/head/supply to
+    investigate; the 500 mL calibration quantifies it).
+18. **WiFi.begin every loop pass never associates** (each call resets the
+    handshake). Fixed with begin-once + re-begin on failure/20 s stall;
+    plus a 3-min no-sleep grace so the first link establishes. Found
+    because the ESP joined the LAN (192.168.1.27, pings flowing) only in
+    a probe sketch with a single blocking begin.
