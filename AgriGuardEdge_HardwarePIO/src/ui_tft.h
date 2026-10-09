@@ -3,7 +3,8 @@
 #include <stdint.h>
 
 typedef struct {
-  float moisture, flow_lpm, vbat;
+  float moisture, flow_lpm, vbat, temp_c, rh_pct;
+  char ssid[32], ip[16];
   int state;               // 0 NORMAL 1 SUSPECT 2 ALARM
   const char *event;       // latest event name
   // conservation (screen 2)

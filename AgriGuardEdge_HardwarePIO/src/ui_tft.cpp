@@ -95,7 +95,7 @@ void ui_init(void) {
   liveBatt = label(scr[0], 80, 2, 78, 14, &lv_font_montserrat_10, 0x8AB4FF);
   liveMoist = label(scr[0], 0, 18, 160, 30, &lv_font_montserrat_28, 0xFFFFFF);
   liveFlow = label(scr[0], 2, 52, 156, 14, &lv_font_montserrat_12, 0x2BDFFF);
-  liveTx = label(scr[0], 2, 112, 156, 14, &lv_font_montserrat_10, 0x8AB4FF);
+  liveTx = label(scr[0], 2, 100, 156, 26, &lv_font_montserrat_10, 0x8AB4FF);
   // ② CONSERVATION — the money screen
   label(scr[1], 2, 2, 156, 14, &lv_font_montserrat_10, 0x8AB4FF);
   const char *names[4] = {"Vdel", "Vsoil", "Vet", "Vres"};
@@ -174,8 +174,9 @@ void ui_boot_splash(uint32_t boot_n, int pcnt_ok) {
 
 void ui_update(const ui_snapshot_t *s) {
   char b[256];
-  snprintf(b, sizeof(b), "%d|%.1f|%.2f|%.2f|%s|%.0f|%.0f|%.0f|%.0f|%.3f|%d|%u",
-           s->state, s->moisture, s->flow_lpm, s->vbat,
+  snprintf(b, sizeof(b), "%d|%.1f|%.2f|%.2f|%.1f|%.0f|%.15s|%.31s|%s|%.0f|%.0f|%.0f|%.0f|%.3f|%d|%u",
+           s->state, s->moisture, s->flow_lpm, s->vbat, s->temp_c, s->rh_pct,
+           s->ssid, s->ip,
            s->event ? s->event : "-", s->v_del, s->v_soil, s->v_et,
            s->v_resid, s->ratio, s_cur, s->next_tx_s);
   if (!strcmp(b, s_last)) return;  // redraw-on-change only
@@ -185,12 +186,15 @@ void ui_update(const ui_snapshot_t *s) {
   lv_label_set_text_fmt(liveState, "%s", stt);
   lv_obj_set_style_text_color(liveState,
       lv_color_hex(s->state == 2 ? 0xFF3030 : (s->state == 1 ? 0xFFC030 : 0x30FF70)), 0);
-  lv_label_set_text_fmt(liveMoist, "%.1f %%", s->moisture);
-  lv_label_set_text_fmt(liveFlow, "flow %.2f L/m %s", s->flow_lpm,
-                        s->pump_on ? "PUMP ON" : "");
-  lv_label_set_text_fmt(liveBatt, "%.2fV", s->vbat);
-  lv_label_set_text_fmt(liveTx, "next tx %us  %0.f%% saved", s->next_tx_s,
-                        s->bw_saved_pct);
+  lv_label_set_text_fmt(liveMoist, "%.2f L/m", s->flow_lpm);
+  if (isnan(s->temp_c) || isnan(s->rh_pct))
+    lv_label_set_text_fmt(liveFlow, "Soil %.1f %%  --C --%%RH", s->moisture);
+  else
+    lv_label_set_text_fmt(liveFlow, "Soil %.1f %%  %.1fC %.0f%%RH",
+                          s->moisture, s->temp_c, s->rh_pct);
+  lv_label_set_text_fmt(liveBatt, "%.1fV", s->vbat);
+  lv_label_set_text_fmt(liveTx, "%s %s\ntx %us · %0.f%% svd", s->ssid, s->ip,
+                        s->next_tx_s, s->bw_saved_pct);
 
   lv_bar_set_value(conBars[0], (int)s->v_del, LV_ANIM_OFF);
   lv_bar_set_value(conBars[1], (int)s->v_soil, LV_ANIM_OFF);

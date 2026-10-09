@@ -5,6 +5,7 @@
  * probe cycles stay awake at 10/5 s. Decisions, not data (§2).
  */
 #include <Arduino.h>
+#include <WiFi.h>
 #include <Preferences.h>
 #include <ArduinoJson.h>
 #include "esp_sleep.h"
@@ -41,7 +42,6 @@ RTC_DATA_ATTR static float rtc_wt = 0, rtc_wrh = 0;
 RTC_DATA_ATTR static uint32_t rtc_wn = 0, rtc_evals = 0, rtc_wdht = 0;
 static uint32_t last_interact_ms = 0;
 
-static void tft_drain_wait(void);  // defined below loop()
 
 static uint32_t uptime_s(void) { return rtc_total_sleep_s + millis() / 1000; }
 static uint8_t hour_now(void) { return (uptime_s() / 3600) % 24; }
@@ -341,6 +341,14 @@ void loop() {
   // ---- UI ----
   ui_snapshot_t us = {};
   us.moisture = moist; us.flow_lpm = rate; us.vbat = vbat;
+  us.temp_c = dht_ok ? t : NAN; us.rh_pct = dht_ok ? rh : NAN;
+  if (WiFi.status() == WL_CONNECTED) {
+    strncpy(us.ssid, WiFi.SSID().c_str(), sizeof(us.ssid) - 1);
+    strncpy(us.ip, WiFi.localIP().toString().c_str(), sizeof(us.ip) - 1);
+  } else {
+    strncpy(us.ssid, "no-wifi", sizeof(us.ssid) - 1);
+    strncpy(us.ip, "--", sizeof(us.ip) - 1);
+  }
   us.state = rtc_core.state;
   us.event = ev_name ? ev_name
              : (r.event != AG_EV_NONE ? ag_event_name(r.event) : "OK");
@@ -363,22 +371,9 @@ void loop() {
   // leak keeps flowing after wake and trips within ~2 cycles — but volume
   // integrates only while awake. Probe cycles (the only place volume
   // matters) never sleep, so conservation is unaffected.
-  cadence = ag_cadence_s(rtc_core.state, rtc_probing);
-#if AG_DEMO_LIVE_1S
-  delay(50);  // demo: no sleep, screen stays live at 1 s cadence
-#else
-  if (rtc_core.state == AG_ST_NORMAL && !rtc_probing && ws_manual() < 0 &&
-      (ws_linked_once() || uptime_s() > 180)) {
-    uint32_t slept = cadence > 5 ? cadence - 5 : cadence;  // 5 s for TX/UI
-    Serial.printf("{\"sleep\":%u}\n", slept);
-    tft_drain_wait();
-    esp_sleep_enable_timer_wakeup((uint64_t)slept * 1000000ULL);
-    rtc_total_sleep_s += slept;
-    esp_deep_sleep_start();
-  }
-#endif
+  // ---- no deep sleep in this build: sleeping powers down the backlight
+  // rail and the TFT goes dark every cycle. Mains-powered node, so we stay
+  // awake on a light delay instead (cadence still adaptive).
+  (void)cadence;
+  delay(100);
 }
-
-// drain DMA before sleep (§6.7 trap 1) — ui owns tft; helper here avoids
-// exposing it: push an empty update and wait via Serial flush window.
-static void tft_drain_wait(void) { delay(50); }
