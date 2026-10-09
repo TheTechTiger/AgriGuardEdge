@@ -12,22 +12,23 @@ Spec: `docs/architechture.md`. Deviations found during build: `docs/ERRATA.md`.
 
 | Path | What |
 |---|---|
-| `firmware/common/anomaly_core.h` | THE detector, pure C++ — stages ①–⑥, no Arduino. Compiled for ESP32 **and** host from this file |
-| `firmware/test/test_core.cpp` | Native g++ unit tests (31/31) |
-| `AgriGuardEdge_HardwarePIO/` | PlatformIO firmware: scheduler, PCNT flow, gated sensors, LVGL UI, TX |
-| `tools/anomaly_replay/` | Host replay: injections, metrics, K/H sweep, C++ parity check |
-| `AgriGuardEdge_Website/` | Flask + SQLite(WAL) + dashboard (ingest, events, probes, energy, scenarios) |
+| `AgriGuardEdge_HardwarePIO/firmware/common/anomaly_core.h` | THE detector, pure C++ — stages ①–⑥, no Arduino. Compiled for ESP32 **and** host from this file |
+| `AgriGuardEdge_HardwarePIO/firmware/test/test_core.cpp` | Native g++ unit tests (31/31) |
+| `AgriGuardEdge_HardwarePIO/` | PlatformIO firmware: scheduler, PCNT flow, gated sensors, LVGL UI, TX (see its README) |
+| `AgriGuardEdge_HardwarePIO/tools/anomaly_replay/` | Host replay: injections, metrics, K/H sweep, C++ parity check |
+| `AgriGuardEdge_Website/` | Flask + SQLite(WAL) + dashboard (see its README) |
+| `datasets/` | Mendeley slice + merged CSV + merge script (see its README, cites the source) |
 
-## Verify (no hardware)
+## Verify (no hardware, each block from repo root)
 
 ```sh
 # detector unit tests
-cd firmware/test && g++ -std=c++17 -Wall -Wextra -I../common test_core.cpp -o test_core && ./test_core
-# replay: 12/12 injections, 0 FA/day
-cd tools/anomaly_replay && make all
+cd AgriGuardEdge_HardwarePIO/firmware/test && g++ -std=c++17 -Wall -Wextra -I../common test_core.cpp -o test_core && ./test_core && cd ../../..
+# replay: 12/12 injections, 0 FA/day (synthetic); 12/12 on the real slice
+cd AgriGuardEdge_HardwarePIO/tools/anomaly_replay && make all && python3 replay.py --csv ../../../datasets/mendeley_merged.csv --inject all --report out/ && cd ../../..
 # firmware compiles for S3 (1.04 MB, fits 4 MB partition)
-cd AgriGuardEdge_HardwarePIO && pio run
-# website API (needs flask: pip install -r AgriGuardEdge_Website/requirements.txt)
+cd AgriGuardEdge_HardwarePIO && pio run && cd ..
+# website API (pip install -r AgriGuardEdge_Website/requirements.txt)
 cd AgriGuardEdge_Website && python3 app.py  # :82
 ```
 
