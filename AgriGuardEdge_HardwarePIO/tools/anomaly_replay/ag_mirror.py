@@ -9,7 +9,7 @@ listed in one block below so a diff is trivial.
 import math
 
 # --- sync with anomaly_core.h ---
-PULSES_PER_LITRE_NOMINAL = 5888.0
+PULSES_PER_LITRE_NOMINAL = 450.0  # ZJ-S201: F = 7.5 x Q
 FLOW_ALPHA = 0.25
 FLOW_RATE_MAX_LPM = 35.0
 LEAK_EPS_LPM = 0.30
@@ -71,7 +71,7 @@ def conservation_verdict(retention, v_del_ml):
 
 class Core:
     def __init__(self, cusum_k=CUSUM_K, cusum_h=CUSUM_H,
-                 suspect_z=SUSPECT_Z, alarm_z=ALARM_Z):
+                 suspect_z=SUSPECT_Z, alarm_z=ALARM_Z, batt_low=3.4):
         self.moist_base = [0.0] * 24
         self.sigma_base = [1.0] * 24
         self.et_rate = [0.15] * 24
@@ -94,6 +94,7 @@ class Core:
         self.prev_big = False
         self.k, self.h = cusum_k, cusum_h
         self.sz, self.az = suspect_z, alarm_z
+        self.batt_low = batt_low
 
     # ① health gate
     def health_gate(self, s):
@@ -117,7 +118,7 @@ class Core:
                 return "SENSOR_TIMEOUT"
         if s["flow"] < -0.05 or s["flow"] > FLOW_RATE_MAX_LPM:
             return "FLOW_IMPLAUSIBLE"
-        if 0.1 < s.get("vbat", 3.9) < BATT_LOW_V:
+        if 0.1 < s.get("vbat", 3.9) < self.batt_low:
             return "POWER_LOW"
         return "NONE"
 

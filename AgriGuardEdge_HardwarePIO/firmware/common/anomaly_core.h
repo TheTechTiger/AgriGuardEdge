@@ -37,10 +37,11 @@ extern "C" {
 /* Tuning constants (K/H/sigmas are FIT via replay, §10.3 — these are  */
 /* the defaults the sweep starts from, not guesses shipped as truth)  */
 /* ------------------------------------------------------------------ */
-#define AG_PULSES_PER_LITRE_NOMINAL 5888.0f
+#define AG_PULSES_PER_LITRE_NOMINAL 450.0f   /* ZJ-S201: F = 7.5 × Q → 450 p/L.
+                                              Bench-calibrate anyway (§5.7) */
 #define AG_FLOW_ALPHA               0.25f
 #define AG_FLOW_RATE_MAX_LPM        35.0f
-#define AG_FLOW_RATE_MIN_TRUST_LPM  1.0f   /* YF-S201 mechanical floor (§14.1) */
+#define AG_FLOW_RATE_MIN_TRUST_LPM  1.0f   /* ZJ-S201 mechanical floor (§14.1) */
 #define AG_LEAK_EPS_LPM             0.30f  /* pump-OFF flow above this = leak */
 #define AG_BASELINE_ALPHA           0.05f
 #define AG_SIGMA_FLOOR              0.40f  /* % moisture, guards /0 on flat win */
@@ -191,6 +192,8 @@ typedef struct {
     float suspect_z, alarm_z;
     float sigma_floor;
     float v_wetted_ml;      /* mL of soil water per 1 % moisture — field cal */
+    float batt_low_v;       /* supply-rail fault threshold (cell 3.4 V,
+                               12 V rail 10.5 V — set per hardware) */
 } ag_config_t;
 
 /* ------------------------------------------------------------------ */
@@ -233,6 +236,7 @@ static inline ag_config_t ag_config_default(void) {
     c.suspect_z = AG_SUSPECT_Z; c.alarm_z = AG_ALARM_Z;
     c.sigma_floor = AG_SIGMA_FLOOR;
     c.v_wetted_ml = 40.0f; /* 1 % moisture ≈ 40 mL in the demo pot; field-cal */
+    c.batt_low_v = AG_BATT_LOW_V;
     return c;
 }
 
@@ -263,7 +267,8 @@ static inline void ag_init(ag_core_t *c) {
 /* ① Sensor Health Gate — never let untrusted data reach analytics     */
 /* Returns AG_EV_NONE when healthy, else the fault code.               */
 /* ------------------------------------------------------------------ */
-static inline ag_event_t ag_health_gate(ag_core_t *c, const ag_sample_t *s,
+static inline ag_event_t ag_health_gate(ag_core_t *c, const ag_config_t *cfg,
+                                        const ag_sample_t *s,
                                         float *innov_out) {
     /* Rail / disconnect FIRST (raw ADC pinned) — a disconnected probe floats
        to a rail, and its calibrated % would also read out-of-range, so the
@@ -305,8 +310,8 @@ static inline ag_event_t ag_health_gate(ag_core_t *c, const ag_sample_t *s,
     /* Flow channel health */
     if (s->flow_lpm < -0.05f || s->flow_lpm > AG_FLOW_RATE_MAX_LPM)
         return AG_EV_FLOW_IMPLAUSIBLE;
-    /* Battery */
-    if (s->vbat_v > 0.1f && s->vbat_v < AG_BATT_LOW_V)
+    /* Supply rail (cell or 12 V rail — threshold comes from cfg) */
+    if (s->vbat_v > 0.1f && s->vbat_v < cfg->batt_low_v)
         return AG_EV_POWER_LOW;
     return AG_EV_NONE;
 }

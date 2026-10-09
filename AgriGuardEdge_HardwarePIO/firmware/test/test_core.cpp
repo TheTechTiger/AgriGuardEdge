@@ -39,13 +39,13 @@ int main() {
         ag_core_t c; ag_init(&c);
         ag_sample_t s = mk(50, 0, 0, 0, 8);
         s.moisture_pct = 150.0f;
-        CHECK(ag_health_gate(&c, &s, nullptr) == AG_EV_SENSOR_OUT_OF_RANGE, "out-of-range trips");
+        CHECK(ag_health_gate(&c, &cfg, &s, nullptr) == AG_EV_SENSOR_OUT_OF_RANGE, "out-of-range trips");
         s.moisture_pct = 50; s.adc_raw = 4095;
-        CHECK(ag_health_gate(&c, &s, nullptr) == AG_EV_SENSOR_DISCONNECTED, "rail reads disconnect");
+        CHECK(ag_health_gate(&c, &cfg, &s, nullptr) == AG_EV_SENSOR_DISCONNECTED, "rail reads disconnect");
         s.adc_raw = 2000; s.flow_lpm = 99.0f;
-        CHECK(ag_health_gate(&c, &s, nullptr) == AG_EV_FLOW_IMPLAUSIBLE, "flow implausible trips");
+        CHECK(ag_health_gate(&c, &cfg, &s, nullptr) == AG_EV_FLOW_IMPLAUSIBLE, "flow implausible trips");
         s.flow_lpm = 0; s.vbat_v = 3.1f;
-        CHECK(ag_health_gate(&c, &s, nullptr) == AG_EV_POWER_LOW, "low battery trips");
+        CHECK(ag_health_gate(&c, &cfg, &s, nullptr) == AG_EV_POWER_LOW, "low battery trips");
     }
 
     /* 3. stuck: feed identical values, expect SENSOR_STUCK after K=8 */
@@ -55,10 +55,10 @@ int main() {
         for (int i = 0; i < 12; i++) {
             ag_sample_t s = mk(41.8f, 0, 0, (uint32_t)i * 60, 8);
             float innov = 0;
-            ev = ag_health_gate(&c, &s, &innov);
+            ag_config_t cc = ag_config_default();
+            ev = ag_health_gate(&c, &cc, &s, &innov);
             ag_window_push(&c, s.moisture_pct);
             // step baseline too so windows advance like firmware does
-            ag_config_t cc = ag_config_default();
             ag_step(&c, &cc, &s, 60);
         }
         CHECK(ev == AG_EV_SENSOR_STUCK, "flatline yields SENSOR_STUCK");
@@ -71,7 +71,7 @@ int main() {
         for (int i = 0; i < 40; i++) {
             float m = 42.0f + 0.02f * i; // slow drift inside band
             ag_sample_t s = mk(m, 0, 0, (uint32_t)i * 60, 8);
-            ag_health_gate(&c, &s, nullptr);
+            ag_health_gate(&c, &cfg, &s, nullptr);
             r = ag_step(&c, &cfg, &s, 60);
         }
         CHECK(c.state == AG_ST_NORMAL, "slow in-band drift stays NORMAL");
@@ -162,6 +162,19 @@ int main() {
         CHECK(ag_cadence_s(AG_ST_SUSPECT, 0) == 10, "suspect cadence 10 s");
         CHECK(ag_cadence_s(AG_ST_ALARM, 0) == 5, "alarm cadence 5 s");
         CHECK(ag_cadence_s(AG_ST_NORMAL, 1) == 5, "probe cadence 5 s");
+    }
+
+    /* 12. supply threshold is hardware-configurable (cell 3.4 V vs 12 V rail) */
+    {
+        ag_core_t c; ag_init(&c);
+        ag_config_t rail = ag_config_default();
+        rail.batt_low_v = 10.5f;
+        ag_sample_t s = mk(50, 0, 0, 0, 8);
+        s.vbat_v = 12.1f;
+        CHECK(ag_health_gate(&c, &rail, &s, nullptr) == AG_EV_NONE, "12.1 V rail passes");
+        s.vbat_v = 9.8f;
+        CHECK(ag_health_gate(&c, &rail, &s, nullptr) == AG_EV_POWER_LOW, "9.8 V rail trips POWER_LOW");
+        CHECK(ag_health_gate(&c, &cfg, &s, nullptr) == AG_EV_NONE, "9.8 V is fine for a cell config");
     }
 
     if (failures == 0) printf("\nALL TESTS PASSED\n");

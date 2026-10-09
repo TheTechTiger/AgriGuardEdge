@@ -59,7 +59,7 @@ def synth(hours=72, seed=7):
     n = hours * 60
     for i in range(n):
         h = (i // 60) % 24
-        # σ=0.8: realistic capacitive-probe noise. (σ=0.3 bench-tests once
+        # σ=0.8: realistic resistive-probe noise. (σ=0.3 bench-tests once
         # showed the STUCK gate firing on clean data — the 0.15 threshold
         # assumes real probe noise, so the synth must carry it.)
         m = 42.0 + 5.0 * math.sin(2 * math.pi * (h - 9) / 24.0) + rng.gauss(0, 0.8)

@@ -32,6 +32,11 @@ static int summary_div = 0;
 static char alert_ring[3][96];
 // Summary scheduling must survive deep sleep → RTC (uptime seconds).
 RTC_DATA_ATTR static uint32_t rtc_last_summary_up = 0;
+// Summary window accumulators (RTC: a 15-min window spans deep sleeps).
+RTC_DATA_ATTR static float rtc_wsum = 0, rtc_wsum2 = 0;
+RTC_DATA_ATTR static float rtc_wmin = 1e9f, rtc_wmax = -1e9f;
+RTC_DATA_ATTR static float rtc_wt = 0, rtc_wrh = 0;
+RTC_DATA_ATTR static uint32_t rtc_wn = 0, rtc_evals = 0, rtc_wdht = 0;
 static uint32_t last_interact_ms = 0;
 
 static void tft_drain_wait(void);  // defined below loop()
@@ -74,7 +79,27 @@ static void tx_json(const char *kind, const char *event, const char *sev,
     e["state"] = r->state == 2 ? "ALARM" : (r->state == 1 ? "SUSPECT" : "NORMAL");
     e["cadence_s"] = ag_cadence_s(r->state, rtc_probing);
   }
-  char buf[512];
+  if (!strcmp(kind, "summary") && rtc_wn > 0) {
+    // Real window stats (§8), not zeros: accumulated across deep sleeps.
+    float avg = rtc_wsum / rtc_wn;
+    float var = rtc_wsum2 / rtc_wn - avg * avg;
+    JsonObject w = d["window"].to<JsonObject>();
+    w["avg_moisture"] = avg;
+    w["min"] = rtc_wmin; w["max"] = rtc_wmax;
+    w["std"] = var > 0.f ? sqrtf(var) : 0.f;
+    w["avg_temp"] = rtc_wdht ? rtc_wt / rtc_wdht : 0; w["avg_rh"] = rtc_wdht ? rtc_wrh / rtc_wdht : 0;
+    JsonObject en = d["energy"].to<JsonObject>();
+    en["vbat"] = vbat;               // 12 V rail volts (not a cell)
+    en["soc_pct"] = 100;             // mains-powered: SoC meaningless
+    en["mah_today"] = 0;             // no current sensor (§1.3) — stated
+    JsonObject sv = d["savings"].to<JsonObject>();
+    sv["readings_generated"] = rtc_evals;
+    sv["messages_sent"] = tx_sent_total();
+    sv["suppressed"] = tx_suppressed_total();
+    rtc_wsum = rtc_wsum2 = 0; rtc_wmin = 1e9f; rtc_wmax = -1e9f;
+    rtc_wt = rtc_wrh = 0; rtc_wn = 0; rtc_wdht = 0;
+  }
+  char buf[768];
   serializeJson(d, buf, sizeof(buf));
   tx_queue(kind, buf);
 }
@@ -110,6 +135,7 @@ void setup() {
   if (rref > 0.001f) rtc_core.r_ref = rref;
   cfg = ag_config_default();
   cfg.v_wetted_ml = AG_V_WETTED_ML;
+  cfg.batt_low_v = AG_SUPPLY_LOW_V;  // 12 V rail monitor, not a cell
 
   sensors_init();
   flow_init(ppl);
@@ -222,6 +248,12 @@ void loop() {
   bool pump_on = digitalRead(PIN_RELAY);
   if (!rtc_probing && !pump_on) flow_power(false);  // gate when idle
 
+  // ---- window accumulators (feed the next real summary) ----
+  rtc_wsum += moist; rtc_wsum2 += moist * moist; rtc_wn++; rtc_evals++;
+  if (moist < rtc_wmin) rtc_wmin = moist;
+  if (moist > rtc_wmax) rtc_wmax = moist;
+  if (dht_ok) { rtc_wt += t; rtc_wrh += rh; rtc_wdht++; }
+
   // ---- ① health gate, then ②③④⑥ ----
   ag_sample_t sm = {};
   sm.moisture_pct = moist; sm.adc_raw = adc;
@@ -230,7 +262,7 @@ void loop() {
   sm.pump_on = pump_on ? 1 : 0;
   sm.t_sec = uptime_s(); sm.hour = hour_now();
 
-  ag_event_t fault = ag_health_gate(&rtc_core, &sm, NULL);
+  ag_event_t fault = ag_health_gate(&rtc_core, &cfg, &sm, NULL);
   ag_result_t r = {};
   const char *ev_name = NULL;
   if (fault == AG_EV_NONE || fault == AG_EV_SENSOR_TIMEOUT) {

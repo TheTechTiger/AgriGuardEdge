@@ -1,8 +1,10 @@
 /**
- * flow_pcnt.cpp — YF-S201 pulse capture (§5.1, §6.2).
- * Primary: ESP32-S3 PCNT hardware unit (counts while CPU sleeps, no ISR
- * jitter at 1.5 kHz). Degraded: GPIO interrupt poll (§12.1 MoSCoW row).
- * Rate is EMA-smoothed (FLOW_ALPHA) to kill pulse-quantisation noise.
+ * flow_pcnt.cpp — ZJ-S201 pulse capture (§5.1, §6.2). 450 p/L nominal
+ * (F = 7.5 × Q), bench-calibrated per §5.7 — never trusted from vendor.
+ * Primary: ESP32-S3 PCNT hardware unit (counts while CPU is awake, no ISR
+ * jitter; max 225 Hz at 30 L/min). Degraded: GPIO interrupt poll
+ * (§12.1 MoSCoW row). Rate is EMA-smoothed to kill quantisation noise,
+ * which matters more at 450 p/L than at finer constants.
  */
 #include <Arduino.h>
 #include "flow_pcnt.h"

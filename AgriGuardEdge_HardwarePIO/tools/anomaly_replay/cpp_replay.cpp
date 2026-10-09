@@ -28,7 +28,7 @@ int main() {
         s.pump_on = (uint8_t)(pump ? 1 : 0);
         s.t_sec = (uint32_t)t; s.hour = (uint8_t)(hour % 24);
         float innov = 0.f;
-        ag_event_t ev = ag_health_gate(&c, &s, &innov);
+        ag_event_t ev = ag_health_gate(&c, &cfg, &s, &innov);
         const char *ename = "NONE";
         float z = 0.f;
         if (ev == AG_EV_NONE || ev == AG_EV_SENSOR_TIMEOUT) {

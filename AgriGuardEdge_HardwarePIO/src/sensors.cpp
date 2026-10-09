@@ -1,12 +1,18 @@
 /**
  * sensors.cpp — power-gated acquisition.
- * Soil probe (~5 mA) and divider live behind PIN_SOIL_PWR: 200 ms burst
- * per sample, 0.8 mAh/day instead of 142 (§7). DHT11 bit-banged (no lib),
- * ≥2 s between reads, NaN on timeout — corroboration only (§5.2).
+ * Resistive probe + divider live behind PIN_SOIL_PWR: 200 ms burst per
+ * sample. Gating is load-saving AND probe-saving: steady DC through wet
+ * soil electrolyses resistive electrodes in days; 200 ms/sample stretches
+ * that to a season. Residual slow drift is caught by the conservation
+ * gate (§5.6b) as SENSOR_DRIFT — stated, not hidden.
+ * DHT11 bit-banged (no lib), ≥2 s between reads, NaN on timeout.
  */
 #include <Arduino.h>
 #include "sensors.h"
 #include "config.h"
+
+// 12 V rail via 100k/27k: Vadc = Vrail × 27/127 ⇒ Vrail = adc × 4.7037
+#define SUPPLY_DIV_RATIO 4.7037f
 
 static float s_last_moist = 40.f;
 static uint32_t s_last_dht_ms = 0;
@@ -40,12 +46,13 @@ float soil_read(int *adc_out) {
 }
 
 float batt_read(void) {
-  // Assumes the soil gate is (or was just) on; re-enable briefly if needed.
+  // Supply-rail monitor (12 V adapter through 100k/27k). Assumes the soil
+  // gate is (or was just) on; re-enable briefly if needed.
   digitalWrite(PIN_SOIL_PWR, HIGH);
   delay(10);
-  int mv = analogReadMilliVolts(PIN_BATT_ADC);
+  int mv = analogReadMilliVolts(PIN_SUPPLY_ADC);
   digitalWrite(PIN_SOIL_PWR, LOW);
-  return (mv / 1000.f) * 2.0f;  // 100k/100k divider
+  return (mv / 1000.f) * SUPPLY_DIV_RATIO;
 }
 
 static bool dht_bit(bool *v, uint32_t timeout_us) {
