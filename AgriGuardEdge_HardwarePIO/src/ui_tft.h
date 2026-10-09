@@ -21,6 +21,7 @@ typedef struct {
 } ui_snapshot_t;
 
 void ui_init(void);
+void ui_boot_splash(uint32_t boot_n, int pcnt_ok);  // cold-boot animation only
 void ui_show(int screen);          // 0 LIVE 1 CONSERVATION 2 PROBE 3 ALERTS
 int  ui_current(void);
 void ui_update(const ui_snapshot_t *s);  // redraw-on-change only

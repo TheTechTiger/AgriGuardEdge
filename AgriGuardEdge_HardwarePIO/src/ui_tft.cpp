@@ -130,6 +130,47 @@ void ui_show(int screen) {
 }
 int ui_current(void) { return s_cur; }
 
+// Cold-boot splash: title + staged progress, ~1.6 s, then LIVE.
+// Never called on deep-sleep wake (caller checks the wakeup cause).
+void ui_boot_splash(uint32_t boot_n, int pcnt_ok) {
+  blWrite(255);
+  lv_obj_t *sp = lv_obj_create(NULL);
+  lv_obj_set_style_bg_color(sp, lv_color_hex(0x000000), 0);
+  lv_obj_set_style_bg_opa(sp, LV_OPA_COVER, 0);
+  lv_obj_set_scrollbar_mode(sp, LV_SCROLLBAR_MODE_OFF);
+  lv_obj_set_style_pad_all(sp, 0, 0);
+  lv_obj_t *t = label(sp, 0, 18, 160, 20, &lv_font_montserrat_14, 0x2BDFFF);
+  lv_label_set_text(t, "AGRI GUARD EDGE");
+  lv_obj_set_style_text_align(t, LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_t *st = label(sp, 0, 40, 160, 14, &lv_font_montserrat_10, 0x8AB4FF);
+  lv_obj_set_style_text_align(st, LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_t *bar = lv_bar_create(sp);
+  lv_bar_set_range(bar, 0, 100);
+  lv_obj_set_pos(bar, 20, 62);
+  lv_obj_set_size(bar, 120, 10);
+  lv_bar_set_value(bar, 0, LV_ANIM_OFF);
+  char b[48];
+  snprintf(b, sizeof(b), "boot %u · flow %s", boot_n, pcnt_ok ? "PCNT" : "POLL");
+  lv_obj_t *sub = label(sp, 0, 78, 160, 14, &lv_font_montserrat_10, 0xFFFFFF);
+  lv_label_set_text(sub, b);
+  lv_obj_set_style_text_align(sub, LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_t *msg = label(sp, 0, 100, 160, 14, &lv_font_montserrat_10, 0x30FF70);
+  lv_obj_set_style_text_align(msg, LV_TEXT_ALIGN_CENTER, 0);
+  lv_screen_load(sp);
+  const char *steps[5] = {"sensors…", "flow meter…", "baseline…", "radio…", "live"};
+  for (int i = 0; i <= 100; i += 5) {
+    lv_bar_set_value(bar, i, LV_ANIM_OFF);
+    lv_label_set_text(msg, steps[i / 20 > 4 ? 4 : i / 20]);
+    lv_timer_handler();
+    delay(80);
+  }
+  lv_obj_delete(sp);
+  lv_screen_load(scr[0]);
+  s_cur = 0;
+  s_last[0] = 0;  // force a full repaint on the first live update
+  lv_timer_handler();
+}
+
 void ui_update(const ui_snapshot_t *s) {
   char b[256];
   snprintf(b, sizeof(b), "%d|%.1f|%.2f|%.2f|%s|%.0f|%.0f|%.0f|%.0f|%.3f|%d|%u",

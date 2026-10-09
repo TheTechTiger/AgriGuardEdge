@@ -142,6 +142,10 @@ void setup() {
   flow_reset_volume();  // re-baseline after any sleep reset
   tx_init();
   ui_init();
+  // Splash only on real boot — deep-sleep timer wakes go straight to LIVE
+  // so the 60 s cadence isn't eaten by animation.
+  if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_TIMER)
+    ui_boot_splash(boot_count, flow_using_pcnt() ? 1 : 0);
   pinMode(PIN_BUTTON, INPUT_PULLUP);
   memset(alert_ring, 0, sizeof(alert_ring));
   snprintf(alert_ring[0], sizeof(alert_ring[0]), "boot %u", boot_count);
