@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "AgriGuardEdge_HardwarePIO"
+		},
+		{
+			"path": "AgriGuardEdge_Website"
+		},
+		{
+			"path": "docs"
+		}
+	],
+	"settings": {}
+}
