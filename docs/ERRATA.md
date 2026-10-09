@@ -62,3 +62,20 @@ Found by testing, not by opinion. Each item quotes the arch section it deviates 
 12. **Summaries carry real window/energy/savings** (RTC accumulators
     across deep sleeps; mains SoC sent as 100, `mah_today` 0 — no current
     sensor, §1.3) instead of the zeros the first firmware sent.
+13. **S3 + TFT_eSPI + Arduino 3.x display crash (fixed, diagnosed on
+    hardware).** Two compounded causes: (a) Arduino renumbered `FSPI=0`
+    while TFT_eSPI's register macros expect the IDF host id, so `init()`
+    wrote SPI base `0+0x10` and Guru-panicked before `setup()` finished —
+    fixed with `-DUSE_FSPI_PORT` (literal 2 = GPSPI2); (b) `MISO=-1`
+    silently remaps MISO onto GPIO13 (our DC) as an INPUT — GPIO15 is
+    sacrificed instead (leave unconnected). Found via addr2line, proven
+    with a minimal probe sketch.
+14. **LVGL 9 defaults `LV_USE_FLOAT=0`**, which compiles `case 'f'` out of
+    its builtin printf: any `"%f … %s"` format desyncs varargs, `%s`
+    reads the double bits (0.0) as a pointer, panic in `lv_strnlen(NULL)`.
+    One-line fix in `lv_conf.h` (`LV_USE_FLOAT 1`); S3 has no FPU but the
+    cost is irrelevant at one label per evaluation.
+15. **This Arduino package ships no `pulse_cnt.h`** (ng driver), so flow
+    uses the legacy `pcnt` driver (unit 0, int16 counter, 100-cycle
+    glitch filter) — same peripheral, same claim. Boot log `"pcnt":1`
+    proves it; ISR poll remains the fallback.

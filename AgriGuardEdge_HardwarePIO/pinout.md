@@ -25,6 +25,7 @@ level shifter first (§6.2) — 5 V into GPIO6 kills the pin.**
 | GPIO13 | TFT `DC` | |
 | GPIO14 | TFT `RST` | |
 | GPIO0 | BOOT button | Short = cycle screen · 3 s hold = mark reference probe |
+| GPIO15 | sacrificial MISO | **Leave unconnected.** Arduino 3.x remaps `MISO=-1` onto GPIO13 (our DC) as INPUT; GPIO15 is sacrificed instead (see `platformio.ini` note 4) |
 | 5V pin | ZJ-S201 `V+` (red), via GPIO8 gate | From USB 5 V (demo) or buck output |
 | GND | Common ground everywhere | 12 V supply GND **tied** to ESP GND — single star point at the DevKit |
 

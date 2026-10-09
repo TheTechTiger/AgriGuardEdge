@@ -164,8 +164,8 @@ void ui_boot_splash(uint32_t boot_n, int pcnt_ok) {
     lv_timer_handler();
     delay(80);
   }
-  lv_obj_delete(sp);
-  lv_screen_load(scr[0]);
+  lv_screen_load(scr[0]);   // unload the splash FIRST …
+  lv_obj_delete_async(sp);   // … then free it (never delete a loaded screen)
   s_cur = 0;
   s_last[0] = 0;  // force a full repaint on the first live update
   lv_timer_handler();

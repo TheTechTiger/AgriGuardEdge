@@ -63,6 +63,14 @@
 #define LV_USE_ANIMATION 0
 #define LV_USE_SHADOW 0
 
+/* Float support ON — required for %f in lv_label_set_text_fmt(). LVGL 9
+ * defaults it OFF, and its builtin printf then compiles out case 'f':
+ * a "%f ... %s" format desyncs varargs, the %s reads the double bits
+ * (0.0f) as a pointer, and the board Guru-panics in lv_strnlen(NULL).
+ * Diagnosed on hardware via addr2line. S3 has no FPU; cost is irrelevant
+ * at one label update per evaluation. */
+#define LV_USE_FLOAT 1
+
 /* Decoders we don't need */
 #define LV_USE_BMP 0
 #define LV_USE_PNG 0

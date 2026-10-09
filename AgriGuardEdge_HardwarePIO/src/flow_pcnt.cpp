@@ -12,8 +12,12 @@
 
 #if __has_include("driver/pulse_cnt.h")
 #include "driver/pulse_cnt.h"
-#define FLOW_HAVE_PCNT 1
-#else
+#define FLOW_HAVE_PCNT_NEW 1
+#elif __has_include("driver/pcnt.h")
+#include "driver/pcnt.h"
+#define FLOW_HAVE_PCNT_LEGACY 1
+#endif
+#if !defined(FLOW_HAVE_PCNT_NEW) && !defined(FLOW_HAVE_PCNT_LEGACY)
 #define FLOW_HAVE_PCNT 0
 #endif
 
@@ -23,9 +27,15 @@ static float s_ppl = AG_PPL_DEFAULT;
 static float s_rate = 0.f, s_vol_ml = 0.f;
 static uint32_t s_last = 0, s_total = 0;
 
-#if FLOW_HAVE_PCNT
+#if defined(FLOW_HAVE_PCNT_NEW)
 static pcnt_unit_handle_t s_unit = NULL;
 static int s_pcnt = 1;
+static volatile uint32_t s_isr = 0;  // poll fallback if init fails
+static void IRAM_ATTR flow_isr() { s_isr++; }
+#elif defined(FLOW_HAVE_PCNT_LEGACY)
+static int s_pcnt = 1;  // legacy driver: unit 0, channel 0, int16 counter
+static volatile uint32_t s_isr = 0;  // poll fallback if legacy init fails
+static void IRAM_ATTR flow_isr() { s_isr++; }
 #else
 static volatile uint32_t s_isr = 0;
 static void IRAM_ATTR flow_isr() { s_isr++; }
@@ -46,7 +56,7 @@ void flow_init(float ppl) {
   flow_set_ppl(ppl);
   pinMode(PIN_FLOW, INPUT);
   flow_power(false);
-#if FLOW_HAVE_PCNT
+#if defined(FLOW_HAVE_PCNT_NEW)
   pcnt_unit_config_t u = {};
   u.high_limit = 30000;
   u.low_limit = -1;
@@ -68,18 +78,50 @@ void flow_init(float ppl) {
   if (!s_pcnt) {  // fall through to poll mode
     attachInterrupt(digitalPinToInterrupt(PIN_FLOW), flow_isr, RISING);
   }
+#elif defined(FLOW_HAVE_PCNT_LEGACY)
+  // Legacy driver (this Arduino package ships no pulse_cnt.h): same PCNT
+  // peripheral, int16 hardware counter, glitch filter for breadboard noise.
+  pcnt_config_t pc = {};
+  pc.pulse_gpio_num = PIN_FLOW;
+  pc.ctrl_gpio_num = PCNT_PIN_NOT_USED;
+  pc.channel = PCNT_CHANNEL_0;
+  pc.unit = PCNT_UNIT_0;
+  pc.pos_mode = PCNT_COUNT_INC;
+  pc.neg_mode = PCNT_COUNT_DIS;
+  pc.lctrl_mode = PCNT_MODE_KEEP;
+  pc.hctrl_mode = PCNT_MODE_KEEP;
+  pc.counter_h_lim = 30000;
+  pc.counter_l_lim = -1;
+  if (pcnt_unit_config(&pc) != ESP_OK) {
+    s_pcnt = 0;
+  } else {
+    pcnt_set_filter_value(PCNT_UNIT_0, 100);  // ~1.25 µs glitch blanking
+    pcnt_filter_enable(PCNT_UNIT_0);
+    pcnt_counter_pause(PCNT_UNIT_0);
+    pcnt_counter_clear(PCNT_UNIT_0);
+    pcnt_counter_resume(PCNT_UNIT_0);
+    s_pcnt = 1;
+  }
+  if (!s_pcnt) {
+    attachInterrupt(digitalPinToInterrupt(PIN_FLOW), flow_isr, RISING);
+  }
 #else
   attachInterrupt(digitalPinToInterrupt(PIN_FLOW), flow_isr, RISING);
 #endif
 }
 
 static uint32_t flow_hw_count(void) {
-#if FLOW_HAVE_PCNT
+#if defined(FLOW_HAVE_PCNT_NEW)
   if (s_unit) {
     int v = 0;
     if (pcnt_unit_get_count(s_unit, &v) == ESP_OK) return (uint32_t)v;
   }
   return s_isr;
+#elif defined(FLOW_HAVE_PCNT_LEGACY)
+  int16_t v = 0;
+  if (pcnt_get_counter_value(PCNT_UNIT_0, &v) == ESP_OK)
+    return (uint32_t)(uint16_t)v;  // wrap-safe vs s_last
+  return 0;
 #else
   uint32_t v;
   noInterrupts();
