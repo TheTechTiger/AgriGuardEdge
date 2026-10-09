@@ -7,7 +7,7 @@ visual → what to say (30–60 s)**. Mermaid blocks are ready to paste into
 Measured numbers below are real (`README.md`, `datasets/README.md`,
 `docs/ERRATA.md`): **12/12 injections, 0 FA/day synthetic, ~5 µs/eval,
 K=1.0/H=10 via sweep, 31/31 unit tests, pio SUCCESS (RAM 44.4 % / Flash
-31.5 %), ~96 % fewer messages, ≈245 mAh/day ≈10 days on 2600 mAh.**
+31.5 %), ~96 % fewer messages, mains-powered demo (12 V + USB).**
 
 > Note: the brief pasted feasibility text under IMPACT AND BENEFITS too —
 > treated as a copy-paste slip; impact slide below covers actual benefits.
@@ -21,22 +21,22 @@ Sub: *Decisions, not data. Flow is the gravitational truth.*
 Team, event, date. One-line hook: "A ₹-cheap node that interrogates its own
 irrigation and proves every verdict with physics."
 
-**Visual:** hero photo — bench rig (ESP32-S3 + soil probe in a pot + YF-S201
+**Visual:** hero photo — bench rig (ESP32-S3 + resistive probe in a pot + ZJ-S201
 in hose + ST7735 lit). Overlay 3 badges: `12/12 detected` · `0 FA/day` ·
 `~96 % fewer messages`.
-**Say (20 s):** "Every reading to the cloud dies in a day on one 18650. Ours
-lasts weeks — because it sends verdicts, not readings, and shows its working."
+**Say (20 s):** "Every reading to the cloud dies in a day on a small cell. Ours
+is mains-powered and battery-ready — because it sends verdicts, not readings, and shows its working."
 
 ---
 
 ## Slide 2 — Problem (sets up everything)
 
 - Battery soil nodes must catch leaks / blockages / drift / stress **locally** —
-  WiFi TX current is ~100× sleep current; naive node survives **~0.7 days**.
+  WiFi TX current is ~100× sleep current; naive node survives **~0.7 days** on a cell.
 - Silent leak + drifting probe are **invisible to moisture alone**.
 - Dataset reality: no flow channel, no labels, no irrigation flag (arch §1.4).
 
-**Visual:** none (or 2-bar chart: naive 3749 mAh/day vs AgriGuard ≈245).
+**Visual:** none (or 2-bar chart: naive 3749 mAh/day vs AgriGuard ≈245, battery-variant reference).
 **Say:** "Two faults that cost farmers the most money cannot be seen by the
 sensor everyone deploys. That's the gap we built for."
 
@@ -49,8 +49,8 @@ Title on slide: **Technical Approach — Technologies Used**
 | Layer | Choice | Why (one phrase each) |
 |---|---|---|
 | MCU | ESP32-S3 DevKitC-1 N16R8 | PCNT pulse counter, ADC1, PSRAM ring buffer |
-| Flow | YF-S201, 5888 p/L, via 74AHCT125 / divider → GPIO6/PCNT0 | Ground-truth volume; 5 V → level shift saves the pin |
-| Soil / air | Capacitive probe (GPIO1, GPIO7-gated) + DHT11 (GPIO4, corroboration only) | Probe is top-3 load — gated to 200 ms/sample |
+| Flow | ZJ-S201, 450 p/L nominal (bench-calibrated), via 74AHCT125 / divider → GPIO6/PCNT0 | Ground-truth volume; 5 V → level shift saves the pin |
+| Soil / air | Resistive probe (GPIO1, GPIO7-gated vs corrosion) + DHT11 (GPIO4, corroboration only) | Gated 200 ms/sample — saves power AND electrodes |
 | Display | ST7735 128×160, TFT_eSPI + LVGL 9, backlight PWM on GPIO9 | Conservation arithmetic live, no cloud needed |
 | Firmware | PlatformIO/Arduino sched + **pure-C++ `anomaly_core.h`** (no Arduino in core) | Same file compiles for ESP32 **and** host replay |
 | Backend | Flask + SQLite (WAL) + 7-panel dashboard | One file, judge-inspectable, idempotent ingest |
@@ -178,7 +178,7 @@ rig dies, the replay still proves the algorithm. Two independent demos."
 | Runs on MCU | ~5 µs/eval, 288 B baseline, RAM 44 % / Flash 31.5 % |
 | Flow trustworthy | 500 mL bench calibration, ±2 % re-run target (§5.7) |
 | Bandwidth | ~110 msgs/day vs 2880 baseline ≈ **96 % reduction** |
-| Energy | ≈245 mAh/day ≈ **10 days** on 2600 mAh (6 cycles/day) |
+| Energy | Mains-powered demo; measured supply current per policy + 96 % fewer messages (§7 table = battery reference) |
 
 **Visual:** metrics table screenshot from replay `out/` + power bar chart.
 **Say:** "A defended 96 % beats an asserted 99 % — we report what we measured."
@@ -191,7 +191,7 @@ rig dies, the replay still proves the algorithm. Two independent demos."
 |---|---|---|
 | 5 V flow kills GPIO | HIGH | Level-shift **before** first power-up; meter check |
 | Backlight eats battery (1699 mAh/day tied to 3V3) | HIGH | PWM on GPIO9: off/15 %/100 % → 19 mAh/day |
-| Pump won't run off 1×18650 | HIGH | Boost rail; fallback pump-on-USB (claims hold) |
+| 12 V pump needs a real adapter | HIGH | Adapter ≥ stall current, relay on 12 V+, common GND; node on USB/buck |
 | Sub-1 L/min leaks invisible | MED | Demo leaks ≥1 L/min; stated as hardware limit §14 |
 | Dataset: 101 rows, no diurnal, no flow/labels | MED | Synthetic 72 h tuning source; conservation gives free labels |
 | Venue WiFi fails | MED | TFT standalone + replay fallback |
@@ -206,8 +206,8 @@ we sacrifice, never the Must column."
 
 - **Water:** continuous-leak rule catches 24/7 losses moisture can never see;
   every probe cycle is a water audit (retained vs lost, on screen).
-- **Money/energy:** node electronics ≈42 mAh/day (84× cut); pump dominates
-  (203/245) — duty cycle, not compute, is the lever, stated honestly.
+- **Money/energy:** node electronics ≈42 mAh/day in the battery variant (84× cut); pump dominates
+  — duty cycle, not compute, is the lever (§7 battery reference), stated honestly.
 - **Labor:** no labels, no cloud round-trips, self-calibrating ratio (one
   reference cycle) — deployable by a farmer, not an ML engineer.
 - **Trust:** every alert carries evidence JSON; undiagnosable alerts are a
@@ -221,7 +221,7 @@ flowchart LR
     L[Leak caught day 1] --> W[Water saved]
     W --> M[Money saved]
     D[Drift caught] --> T[Trust kept]
-    E[96% fewer TX] --> B[Battery weeks]
+    E[96% fewer TX] --> B[Measured mA/policy]
 ```
 
 **Say (45 s):** "The highest-value line of code is one threshold: pump off,
@@ -238,7 +238,8 @@ flow non-zero, somebody's valve is weeping money into the soil right now."
 - Methods: EWMA-CUSUM shift detection; MAD robust statistics (σ≈1.4826·MAD);
   hour-of-day conditioned baselines; PCNT hardware pulse counting (Espressif
   docs); LVGL 9 + TFT_eSPI (DeskBuddy stack, adapted §6.6).
-- Hardware datasheets: YF-S201 (5888 p/L, ±5 %, 1–30 L/min); ESP32-S3
+- Hardware: ZJ-S201 (450 p/L nominal, bench-calibrated, 1–30 L/min); 12 V pump;
+  resistive probe (corrosion-gated); ESP32-S3
   DevKitC-1 N16R8; ST7735; DHT11 limits (±2 °C, ±20 % RH — corroboration only).
 - Repo spec: `docs/architechture.md`; deviations: `docs/ERRATA.md`;
   wiring: `pinout.md`.

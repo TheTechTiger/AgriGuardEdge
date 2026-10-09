@@ -1,6 +1,6 @@
 # AgriGuard Edge — edge-native irrigation anomaly detection (ESP32-S3)
 
-One capacitive soil probe + one YF-S201 flow meter on a 18650. The node
+One resistive soil probe + one ZJ-S201 flow meter, 12 V pump on a wall adapter. The node
 builds a self-calibrating diurnal baseline, watches for sustained
 departures, and **interrogates the irrigation**: pump a known volume,
 check mass conservation. Flow is the gravitational truth the probe

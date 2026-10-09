@@ -7,7 +7,7 @@
 
 ## 0. TL;DR
 
-A breadboarded ESP32-S3 node on a 18650 cell watches one capacitive soil probe and one YF-S201 flow meter. It does **not** stream readings to the cloud. It builds a **self-calibrating, diurnal-conditioned baseline** of "normal" for the field, watches for **sustained departures** from it, and — the core idea — **interrogates the irrigation system**: it pulses its own pump through the flow meter and checks whether the delivered water actually appeared in the soil.
+A breadboarded ESP32-S3 node watches one resistive soil probe and one ZJ-S201 flow meter, with a 12 V pump on a wall adapter. It does **not** stream readings to the cloud. It builds a **self-calibrating, diurnal-conditioned baseline** of "normal" for the field, watches for **sustained departures** from it, and — the core idea — **interrogates the irrigation system**: it pulses its own pump through the flow meter and checks whether the delivered water actually appeared in the soil.
 
 That gives it a **flow-mass-conservation gate**:
 
@@ -37,13 +37,12 @@ On-board **ST7735 128×160 colour TFT (LVGL 9)** renders the conservation arithm
 | Part | Interface | Design consequences |
 |---|---|---|
 | ESP32-S3 DevKitC-1 **N16R8** | — | 16 MB flash, 8 MB PSRAM, 12-bit ADC1, **PCNT** hardware pulse counters, WiFi 2.4 GHz |
-| **Flow sensor YF-S201 / YF-S402** | Pulse out, 5 V | 1–30 L/min, **5888 pulses/L**, ±5 %, ~15 mA. **5 V logic → level shifting mandatory.** ~360 mAh/day if left on. Must be gated |
-| Capacitive soil moisture sensor | Analog out | ~5 mA *continuous* — a top-3 load. Must be power-gated |
+| **Flow sensor ZJ-S201** | Pulse out, 5 V | 1–30 L/min, **450 pulses/L** (`F = 7.5 × Q`), ~10 mA. **5 V logic → level shifting mandatory.** Must be gated |
+| Resistive soil moisture probe | Analog out | Dry ≈ rail, wet ≈ low. **DC electrolysis corrodes electrodes in days if left powered — must be power-gated** (§6.4); slow corrosion drift is caught by the conservation gate (§5.6b) |
 | DHT11 | 1-wire GPIO | ±2 °C, **±20 % RH**, 0–50 °C, min 2 s between reads. Corroboration only |
-| Relay module (+ driver) | GPIO | Needs flyback diode across the pump + 1000 µF bulk cap |
-| Mini water pump | Mechanical | Usually 6–12 V rated — one 18650 will not drive it cleanly |
-| **ST7735 TFT 128×160** | SPI | 1.8" RGB565 colour, **landscape 160×128**. Backlight is the **single biggest display load (~60 mA)** and must be PWM-gated, not tied to 3V3 |
-| 18650 Li-ion | — | **Use a cell with a protection/BMS board.** Bare cell + pump = fire risk |
+| Relay module (+ driver) | GPIO | **Verify it clicks on 3.3 V logic** (many 5 V modules don't). COM/NO switch the 12 V+ pump line; flyback 1N4007 across pump + 1000 µF/25 V bulk cap; **common GND or nothing works** |
+| 12 V pump | Mechanical | Runs off a **12 V wall adapter (≥ pump stall current)** — no battery in this BOM. Relay switches 12 V+, node never sees it |
+| 12 V adapter + USB / buck | Power | Adapter → pump rail; node on USB 5 V (demo) or 12 V→5 V buck (field). 12 V rail monitored via 100 k/27 k on GPIO2 (<10.5 V ⇒ `POWER_LOW`) |
 | Breadboard + jumpers | — | Contact bounce is real; verify wiring at H+2, not H+20 |
 
 ### 1.2 Flow sensor — the parameters that drive the design
@@ -51,11 +50,11 @@ On-board **ST7735 128×160 colour TFT (LVGL 9)** renders the conservation arithm
 | Property | Value | Why it matters |
 |---|---|---|
 | Output | **5 V TTL square wave** | **Exceeds ESP32-S3 GPIO abs-max (3.6 V). Level shift required — see §6.2.** This is the #1 way this build gets fried |
-| Pulses per litre | **5888** | `Hz = 5888 × L/min ÷ 60` → 1 L/min = 98 Hz, 15 L/min = 1472 Hz |
+| Pulses per litre | **450** (`F = 7.5 × Q`) | `Hz = 7.5 × L/min` → 1 L/min = 7.5 Hz, 30 L/min = 225 Hz. **Bench-calibrate anyway (§5.7) — never trust the vendor number** |
 | Range | **1–30 L/min** | **Sub-1 L/min leaks are invisible.** Addressed honestly in §14 |
-| Supply | 5–24 V (use 5 V) | Shares the pump's boost rail |
-| Draw | ~15 mA | = **360 mAh/day ungated** — the single largest load in the system |
-| Accuracy | ±5 % | Must be calibrated by volume (§5.6), not trusted |
+| Supply | 5 V (tolerant 5–18 V) | From the 5 V rail (USB 5 V pin), gated via GPIO8 MOSFET/relay; fallback ungated with noted cost |
+| Draw | ~10 mA | Gated to pump-on + leak checks — same lesson as the soil probe |
+| Accuracy | verify by volume | **Unknown from the vendor page — the §5.7 calibration IS the datasheet.** Assume nothing |
 | Mounting | **Arrow pointing up, vertical** | Horizontal or inverted mounting degrades the reading badly |
 
 ### 1.3 What we still do **not** have
@@ -82,7 +81,7 @@ La Trobe University, *Smart Agriculture and Plant Health Monitoring using IoT* �
 
 ## 2. Problem statement
 
-Battery-powered soil sensors across large farms must detect irrigation faults — leaks, sensor failure, blocked lines, pump failure, water stress — **locally**. Continuous uplink is unaffordable on a battery node: WiFi TX current is two orders of magnitude above sleep current, and a naive node sampling every 30 s with WiFi associated survives **under a day and a half** on one 18650.
+Battery-powered soil sensors across large farms must detect irrigation faults — leaks, sensor failure, blocked lines, pump failure, water stress — **locally**. Continuous uplink is unaffordable on a battery-class node: WiFi TX current is two orders of magnitude above sleep current, and a naive node sampling every 30 s with WiFi associated survives **under a day and a half** on a small cell. (This demo build is mains-powered — 12 V adapter + USB — so §7's battery table is the design reference and the reported metrics are measured supply current per policy plus bandwidth.)
 
 AgriGuard Edge detects on the node and transmits **decisions, not data**.
 
@@ -92,7 +91,7 @@ AgriGuard Edge detects on the node and transmits **decisions, not data**.
 
 | Criterion | Architectural commitment |
 |---|---|
-| **1. Problem understanding & depth** | Design derived from the exact parts list, including YF-S201's sub-1 L/min blind spot. Power budget derived from real load currents, not message counts. |
+| **1. Problem understanding & depth** | Design derived from the exact parts list, including ZJ-S201's sub-1 L/min blind spot and resistive-probe corrosion. Power budget derived from real load currents, not message counts. |
 | **2. Innovation & algorithmic uniqueness** | **Flow-mass-conservation gate** (§5.5) — physics-based fault isolation *and* label-free sensor-drift detection. Plus robust diurnal baseline, EWMA-CUSUM, N-of-M persistence, controlled-volume probing, adaptive cadence. |
 | **3. Technical architecture & code quality** | One dependency-free core (`anomaly_core.h`), zero Arduino, compiled for **both** ESP32 and host. **PCNT hardware pulse counting**, not ISR polling. Versioned JSON, idempotent ingest. |
 | **4. Working prototype** | MoSCoW with **kill checks at H+4, H+8, H+12**. Every feature has a documented degraded mode. Correct wiring tables. |
@@ -103,12 +102,12 @@ AgriGuard Edge detects on the node and transmits **decisions, not data**.
 ## 4. System architecture
 
 ```text
-┌───────────── 18650 + protection/BMS + 3.3 V boost + 5 V boost ──────────────┐
+┌───────────── 12 V adapter to pump rail + 5 V node rail (USB demo / buck field) ──────────────┐
 │                                                                             │
 │  ┌────────────┐   ┌─────────┐    ┌─────────┐   ┌────────┐   ┌──────────┐  │
-│  │ YF-S201    │   │ Soil    │    │ DHT11   │   │ Relay  │   │  ST7735 TFT  │  │
+│  │ ZJ-S201    │   │ Soil    │    │ DHT11   │   │ Relay  │   │  ST7735 TFT  │  │
 │  │ 5 V pulses │   │ probe   │    │         │   │ +flyback│  │ 128×160      │  │
-│  │  5888 p/L  │   │ (gated) │    │         │   │        │   │ SPI + PWM BL │  │
+│  │  450 p/L   │   │ (gated) │    │         │   │        │   │ SPI + PWM BL │  │
 │  └─────┬──▲───┘   └──┬───▲──┘    └────┬────┘   └───┬────┘   └────┬─────┘  │
 │        │  │ GATE     │   │ GATE      │            │             │  SPI+PWM│
 │        ▼  │          │   │           │            │             │        │
@@ -225,7 +224,7 @@ flow_ch_t flow_update(flow_ch_t *f, uint32_t pcnt_now,
 }
 ```
 
-**Quantisation note:** at low flow, 1 L/min ≈ 98 pulses/s — plenty of resolution. The real limit is the sensor's mechanical floor (~1 L/min) and ±5 % accuracy, both handled in §14. `pulses_per_litre` is **calibrated at runtime** (§5.7), not hard-coded from the datasheet.
+**Quantisation note:** at 450 p/L, 1 L/min ≈ 7.5 pulses/s — volume integrates fine (250 mL ≈ 112 pulses) but the *rate* is noisy at low flow, which is why the EMA stage exists. The real limit is the sensor's mechanical floor (~1 L/min) and unquoted accuracy, both handled in §14. `pulses_per_litre` is **calibrated at runtime** (§5.7), not hard-coded from the datasheet.
 
 ### 5.2 Stage ① — Sensor Health Gate
 
@@ -242,9 +241,9 @@ flow_ch_t flow_update(flow_ch_t *f, uint32_t pcnt_now,
 | **Flow** | commanded ON but `rate ≈ 0` for 3 evals | `FLOW_NO_PULSE` |
 | **Flow** | pulse count never advances for `> 60 s` | `FLOW_SENSOR_FAULT` |
 | **Flow** | wildly varying rate while pump steady | `FLOW_NOISY` |
-| Battery | cell `< 3.4 V` | `POWER_LOW` |
+| Supply | rail below `cfg.batt_low_v` (cell 3.4 V / 12 V rail 10.5 V) | `POWER_LOW` |
 
-> **Why MAD-based flatline, not exact-equal repeats?** Real capacitive probes are noisy — exact repeats are *rare in healthy data*, so a "same value six times" test misses the actual failure mode. A disconnected probe floats to a rail. We test **low innovation + out-of-range**, which is what really happens.
+> **Why MAD-based flatline, not exact-equal repeats?** Real resistive probes are noisy — and they corrode — exact repeats are *rare in healthy data*, so a "same value six times" test misses the actual failure mode. A disconnected probe floats to a rail; a bone-dry probe in air can pin near it too (read as out-of-soil, which is honest). We test **low innovation + out-of-range**, which is what really happens.
 >
 > **DHT11 caveat, handled explicitly:** ±20 % RH means it must never be a *primary* gate. It enters the feature vector as corroboration, below the soil channel in weight, with its own health gate.
 
@@ -336,7 +335,7 @@ One noisy ADC read must never page anyone.
 
 **(a) No absolute calibration needed.** `V_wetted_zone` is unknown, and honestly unknowable in 24 hours. But we don't need it — run one **reference cycle** on known-good hardware, record `R_ref = ΔV_soil / V_delivered`, and compare every subsequent cycle to `R_ref`. The ratio is self-calibrating. This mirrors the baseline philosophy applied to hydraulics.
 
-**(b) Negative control against sensor drift.** If `R_t > 1.15`, more water appears in the soil than was ever delivered — **physically impossible**. Therefore the probe has drifted. This catches capacitive-probe drift and calibration decay, which **no amount of self-referencing statistics can ever catch**, because a drifting probe defines its own "normal". Flow is an external reference that the probe cannot argue with.
+**(b) Negative control against sensor drift.** If `R_t > 1.15`, more water appears in the soil than was ever delivered — **physically impossible**. Therefore the probe has drifted. This catches resistive-probe corrosion drift and calibration decay, which **no amount of self-referencing statistics can ever catch**, because a drifting probe defines its own "normal". Flow is an external reference that the probe cannot argue with.
 
 **(c) Label-free sensor-fault ground truth.** The conservation identity yields labelled sensor faults *for free*, independent of the dataset. This partially answers the "your dataset has no anomalies" critique (§14).
 
@@ -364,7 +363,7 @@ The passive detector can say *"moisture is not responding"*. It cannot say **why
 
 **`CONTINUOUS_LEAK` is the highest-value single rule in the project.** Pump off, yet water is moving → a fitting is weeping into the soil, a valve is passing, or a line is open. Moisture and temperature are *structurally blind* to this — a slow drip keeps the root zone within normal range indefinitely. One threshold detects it. For a farmer this is the difference between a 24/7 water loss and a fixed valve.
 
-**Calibrating the pulse constant.** We do not trust the datasheet's 5888 p/L:
+**Calibrating the pulse constant.** We do not trust the vendor's 450 p/L (F = 7.5 × Q):
 
 ```text
    1. Put the outlet in a graduated container (500 mL bottle).
@@ -390,7 +389,7 @@ The passive detector can say *"moisture is not responding"*. It cannot say **why
 | `FLOW_SENSOR_FAULT` / `FLOW_NO_PULSE` / `FLOW_IMPLAUSIBLE` | ① | flow channel untrustworthy | MED |
 | `SENSOR_SPIKE_BURST` | ① | rejected transient | LOW |
 | `EXTERNAL_EVENT` | ② | rain / third-party irrigation, large step | INFO |
-| `POWER_LOW` | ① | cell below threshold | MED |
+| `POWER_LOW` | ① | supply rail below threshold | MED |
 
 ### 5.9 Adaptive Sampling Cadence
 
@@ -413,10 +412,12 @@ The expensive regime is entered only when something is actually happening — wh
 
 | Function | GPIO | Notes |
 |---|---|---|
-| Soil probe → ADC | **GPIO1** (ADC1_CH0) | ADC2 is unusable while WiFi is active — another reason to power-gate WiFi |
-| Battery sense → ADC | **GPIO2** (ADC1_CH1) | 100 k / 100 k divider; gated with the probe |
+| Soil probe → ADC | **GPIO1** (ADC1_CH0) | Resistive AO (dry ≈ rail, wet ≈ low). ADC2 is unusable while WiFi is active — another reason to power-gate WiFi |
+| Soil probe VCC (gate) | **GPIO7** | 200 ms/sample. Mandatory on resistive — DC electrolysis eats electrodes in days if left on |
+| Flow 5 V (gate) | **GPIO8** | MOSFET/2nd-relay gate for the ~10 mA meter; demo fallback = tie to 5 V rail |
+| 12 V rail sense → ADC | **GPIO2** (ADC1_CH1) | 100 k / 27 k divider (×4.7037); gated with the probe; <10.5 V ⇒ `POWER_LOW` |
 | DHT11 data | **GPIO4** | 4.7 k–10 k pull-up to 3V3; sample ≥ 2 s apart |
-| Relay | **GPIO5** | Via module driver transistor; **flyback diode across pump**, 1000 µF bulk cap |
+| Relay | **GPIO5** | **Verify the module clicks on 3.3 V logic.** COM/NO switch the 12 V+ pump line; flyback 1N4007 across pump + 1000 µF/25 V bulk cap; **common GND** |
 | **Flow pulse (post-shift)** | **GPIO6** → **PCNT0 unit 0 ch 0** | Rising-edge count. `GPIO6` is ADC2_CH0 but that is irrelevant for a digital input |
 | TFT backlight | **GPIO9** (LEDC PWM) | **Must be on a GPIO, not tied to 3V3** — this is the biggest power lever in the UI (§7) |
 | TFT SCK | **GPIO12** | FSPI host |
@@ -430,10 +431,10 @@ The expensive regime is entered only when something is actually happening — wh
 
 ### 6.2 Flow level shifting — do this before anything else
 
-The YF-S201 output swings to **5 V**. ESP32-S3 GPIO abs-max is **3.6 V**. Connecting it directly destroys the pin, and the symptom (random resets, then a dead pin) gets misdiagnosed as a code bug at 3 a.m.
+The ZJ-S201 output swings to **5 V**. ESP32-S3 GPIO abs-max is **3.6 V**. Connecting it directly destroys the pin, and the symptom (random resets, then a dead pin) gets misdiagnosed as a code bug at 3 a.m.
 
 ```text
-   YF-S201 OUT ────┬─────────────────────────────► ESP32 GPIO6 (PCNT0)
+   ZJ-S201 OUT ────┬─────────────────────────────► ESP32 GPIO6 (PCNT0)
                    │
                  10 kΩ         ← series
                    │
@@ -446,7 +447,7 @@ The YF-S201 output swings to **5 V**. ESP32-S3 GPIO abs-max is **3.6 V**. Connec
 **Better:** a single **74AHCT125** quad buffer does level translation *and* provides Schmitt-trigger hysteresis, which materially improves pulse cleanliness on a noisy breadboard:
 
 ```text
-   YF-S201 OUT ──► 74AHCT125 A_in      (5 V-tolerant input)
+   ZJ-S201 OUT ──► 74AHCT125 A_in      (5 V-tolerant input)
                   74AHCT125 A_out ──► ESP32 GPIO6
                   VCC = 5 V, VCCA = 3V3   (AHCT outputs 3.3 V CMOS)
 ```
@@ -456,14 +457,13 @@ If the AHCT is unavailable, the divider works — add a **10 k pull-up to 3V3** 
 ### 6.3 Plumbing topology
 
 ```text
-          18650 ──► 5 V boost ──┬──► YF-S201  (V+)
-                               │
-        18650 ──► 3.3 V boost ─┴──► ESP32-S3
-                               └──► (pump bypass rail)
+          12 V adapter ──┬──► ZJ-S201  (V+, 5 V rail)
+                         │
+          USB 5 V ───────┴──► ESP32-S3 (demo; field: 12 V→5 V buck)
 
    ┌───────────────── irrigation line ──────────────────┐
    │                                                     │
-   │   battery ──► [mini pump] ──► relay ──► [YF-S201] ──┼──► solenoid ──► zone
+   │   12 V adapter ──► [12 V pump] ──► relay ──► [ZJ-S201] ──┼──► solenoid ──► zone
    │                                        ▲           │                   │
    │                                        │           │              soil probe
    │                              measured here        └───── probe zone ───┘
@@ -479,28 +479,28 @@ If the AHCT is unavailable, the divider works — add a **10 k pull-up to 3V3** 
 | **Downstream of the solenoid** | Zone-local leaks; cleanest `CONTINUOUS_LEAK` test (valve commanded shut, meter reads zero) | Flow no longer proves pump health |
 | **Two positions, swapped mid-demo** | Live demonstration of attribution | Extra plumbing time at H+10 |
 
-**Mount the YF-S201 vertically with the arrow pointing up.** Horizontal or inverted mounting degrades the reading substantially — a silent accuracy loss that would quietly poison §5.6.
+**Mount the ZJ-S201 vertically with the arrow pointing up.** Horizontal or inverted mounting degrades the reading substantially — a silent accuracy loss that would quietly poison §5.6.
 
 ### 6.4 Power domains
 
 ```text
-   18650 (protected)
-      ├── 3.3 V boost ──┬── ESP32-S3
-      │                 ├── ST7735 logic + backlight (PWM on GPIO9)
-      │                 ├── soil probe   (gated)      ← 5 mA, gated!
-      │                 └── battery divider (gated)
-      └── 5 V boost ──┬── YF-S201     (gated)      ← 15 mA, gated!
-                      └── pump        (via relay)
+   12 V adapter ──┬── 12 V pump (via relay COM/NO)
+                  └── (buck) ──► 5 V node rail (USB in the demo)
+   5 V node rail ──┬── ESP32-S3
+                   ├── ST7735 logic + backlight (PWM on GPIO9)
+                   ├── resistive probe (GPIO7-gated — anti-corrosion, not just power)
+                   ├── 12 V sense divider (gated) + DHT11
+                   └── ZJ-S201 (GPIO8-gated)      ← ~10 mA, gated!
 ```
 
 Four consequences that materially change the design:
 
-1. **Gate the flow sensor.** At ~15 mA continuous it burns **≈360 mAh/day — more than the entire rest of the node combined.** We only need it powered during pump-on windows and during periodic pump-off leak checks. Gating drops it to **≈7 mAh/day**, a 50× reduction. Same lesson as the soil probe, one level up: *the sensors, not the radio, are what kill a battery node.*
+1. **Gate the flow sensor.** At ~10 mA continuous it is the largest always-on load in the node. We only need it powered during pump-on windows and during periodic pump-off leak checks — same lesson as the soil probe, one level up: *the sensors, not the radio, are what kill a node.* (Battery-variant reference numbers retained in §7.)
 2. **PWM-gate the TFT backlight.** At full white the ST7735 backlight pulls **~60 mA — comparable to the pump, and 4× the ESP32's entire processing budget.** Tying `LED` straight to 3V3 (the common default) burns **≈1 440 mAh/day** and dwarfs every other optimisation in this document. On `GPIO9` with LEDC PWM we get three levels: **off** (>5 min idle), **15 %** (ambient readout), **100 %** (alarm or active probe). See §9.1.
-3. **A mini pump is usually 6–12 V.** One 18650 will not drive it cleanly. If the boost stage is unavailable by H+4, the documented fallback is **pump on USB, MCU on battery** — every algorithmic claim still holds, stated up front.
+3. **The pump is 12 V and the node never sees it.** A 12 V wall adapter (≥ stall current) feeds the pump through the relay; the node runs on USB 5 V (demo) or a 12 V→5 V buck (field). No boost stage, no battery anywhere. If the adapter is unavailable by H+4, the documented fallback is a **bench 12 V supply shared with the buck** — every algorithmic claim still holds, stated up front.
 4. **Pump inrush can brownout the ESP32.** Bulk cap + separate rail, or the node dies mid-test and gets misdiagnosed as a crash.
 
-> **Battery safety:** use a cell **with a protection/BMS board**. A bare 18650 with a pump on the rail is a fire risk. Do not charge while pumping.
+> **Mains safety:** the relay switches 12 V+, **not mains**. Keep the adapter brick off the breadboard, fuse the 12 V+ line if the adapter is unfused, and tie all GNDs together — a floating pump ground makes the relay chatter and the flow reading garbage.
 
 ### 6.5 Firmware structure
 
@@ -600,11 +600,11 @@ Backlight-off alone leaves 5–15 mA flowing indefinitely. Both, or the "screen 
 
 ## 7. Power budget
 
-**Estimates to be validated on the bench (§10.4).** Daily figures assume 60 s `NORMAL` cadence, 96 summaries, ~20 min/day of screen interaction, 6 probe cycles/day, 2600 mAh protected cell, ~85 % boost efficiency. Expressed as **mAh drawn from the cell**.
+**Battery-variant reference budget — the demo build is mains-powered** (12 V adapter + USB), so what we *report* is measured supply current per policy on a USB meter plus the bandwidth number. The table below is kept as the design reference: it is what sizes the battery if this ever goes off-grid. Daily figures assume 60 s `NORMAL` cadence, 96 summaries, ~20 min/day of screen interaction, 6 probe cycles/day, 2600 mAh protected cell, ~85 % boost efficiency. Expressed as **mAh drawn from the cell**.
 
 | Load | Active | Naive (per day) | Gated (per day) | Mitigation |
 |---|---|---|---|---|
-| **YF-S201 flow sensor** | 15 mA @ 5 V | **486** | **7** | power-gate to pump-on + periodic leak checks |
+| **ZJ-S201 flow sensor** | ~10 mA @ 5 V | **~360 (ref)** | **~5 (ref)** | power-gate to pump-on + periodic leak checks |
 | **TFT backlight** | 60 mA @ 3V3 | **1 699** | **19** | PWM on GPIO9: off / 15 % / 100 % |
 | **Soil probe** | 5 mA | 142 | **0.8** | power-gate, 200 ms burst per sample |
 | **WiFi** | 240 mA bursts | 850 | **4** | connect → send → disconnect; radio fully off between |
@@ -665,7 +665,7 @@ POST /api/ingest
     "residual_ratio": 0.834,
     "ratio_vs_reference": 0.29,
     // instantaneous
-    "flow_rate_lpm": 0.0, "pump_state": "OFF", "flow_calibrated_ppl": 5888,
+    "flow_rate_lpm": 0.0, "pump_state": "OFF", "flow_calibrated_ppl": 450,
     // state machine
     "state": "ALARM", "state_age_s": 240, "cadence_s": 5,
     "degraded_modes": []
@@ -917,7 +917,7 @@ Each triggerable physically and via the dashboard launcher.
 |---|---|---|---|---|
 | **0–2** | Lock pin map; **level-shift and verify the flow sensor first**; bring up each sensor one at a time | Flask skeleton + schema | Download dataset, inspect schema, confirm channels | Problem framing + rubric mapping |
 | **2–4** | PCNT capture; **run the flow volume-calibration**; power-gating; ADC loop | `POST /api/ingest` + idempotency | Build replay harness skeleton | — |
-| **4–6** | Stages ①–② on hardware | Dashboard: live trace + flow strip | Fit baseline on dataset | **⚠ KILL CHECK 1 (H+4):** flow + pump stable? If not → pump-on-USB fallback, poll instead of PCNT |
+| **4–6** | Stages ①–② on hardware | Dashboard: live trace + flow strip | Fit baseline on dataset | **⚠ KILL CHECK 1 (H+4):** flow + pump stable? If not → bench-supply fallback, poll instead of PCNT |
 | **6–9** | Stages ③–④ + state machine | Events view + evidence JSON | Fit `K`,`H`; run injections | Draft architecture slide |
 | **9–12** | **Conservation gate + controlled-volume probe** | Conservation bar chart | **⚠ KILL CHECK 2 (H+8):** conservation numbers stable across cycles? If not → ship it as an unclassified ratio + continuous-leak rule | Demo script v1 |
 | **12–15** | `CONTINUOUS_LEAK`; ST7735 CONSERVATION screen; WiFi TX scheduler | Scenario launcher + energy panel | Held-out validation, sensitivity sweep | **⚠ KILL CHECK 3 (H+12):** end-to-end alert on hardware? If not → serial-bridge fallback |
@@ -935,7 +935,7 @@ Each triggerable physically and via the dashboard launcher.
 | `dmaWait()` missed before deep sleep | MED | §6.7 trap 1 — torn frames or crash on wake |
 | Flow sensor never reads a pulse (wiring/fault) | **HIGH** | Verify at H+1 with a hand-pumped 500 mL before anything else depends on it |
 | **Sub-1 L/min leaks invisible** (§14) | MED | Demo uses leaks ≥ 1 L/min; documented as a hardware limit, not a design flaw |
-| Mini pump won't run off one 18650 | **HIGH** | Boost stage; fallback = pump on USB, node on battery |
+| 12 V pump needs a real 12 V adapter | **HIGH** | Adapter sized ≥ stall current; relay COM/NO on 12 V+, common GND; node stays on USB/buck |
 | Flow meter reads low when horizontal | MED | Mount vertical, arrow up; verify against the 500 mL calibration |
 | Pump inrush brownouts ESP32 | MED | 1000 µF cap, separate rail; looks identical to a crash otherwise |
 | Dataset schema differs from catalog page | MED | Verify at H+0–1; fallback = synthetic diurnal model, documented |
@@ -948,7 +948,7 @@ Each triggerable physically and via the dashboard launcher.
 
 ## 13. Defense script
 
-**Opening (30 s).** "Every reading to the cloud works until you count the battery. A node that samples every 30 seconds with everything switched on survives about a day on one 18650. Ours survives weeks — because it sends decisions, not data, and it can show you the arithmetic behind every decision."
+**Opening (30 s).** "Every reading to the cloud works until you count the power. A node that samples every 30 seconds with everything switched on survives about a day on a small cell — ours is mains-powered for the demo and battery-ready by design — because it sends decisions, not data, and it can show you the arithmetic behind every decision."
 
 **Problem (45 s).** Farmers can't afford cloud round-trips per reading and can't afford a node that dies. Worse, the two most expensive faults — a silent leak and a drifting probe — are *invisible* to moisture monitoring alone.
 
@@ -962,12 +962,14 @@ Each triggerable physically and via the dashboard launcher.
 
 | Challenge | Response |
 |---|---|
-| "What if the leak is slower than your meter can see?" | Correct — below ~1 L/min the YF-S201 is blind. It's a hardware limit, stated in §14, and it's why the meter sits *before* the leak point so we integrate over long windows. A clamp-on ultrasonic or pressure sensor is the real fix. |
+| "What if the leak is slower than your meter can see?" | Correct — below ~1 L/min the ZJ-S201 is blind. It's a hardware limit, stated in §14, and it's why the meter sits *before* the leak point so we integrate over long windows. A clamp-on ultrasonic or pressure sensor is the real fix. |
 | "Rules aren't ML." | The tree is real but small by design; the contribution is the conditioning plus the conservation gate, and the whole thing fits in <20 kB RAM. |
 | "Your dataset has no anomalies or flow." | Correct. So we inject with a published protocol, and the conservation law generates sensor-fault labels the dataset can't provide. |
 | "How do you know V_wetted?" | We don't, and we don't need to — one reference cycle calibrates the ratio. That's stated in §5.6a. |
 | "99 % reduction?" | We measure ~96 % and report it. 99 % needs adaptive summaries, which is a `Could`, not a claim. |
-| "Does it run on battery?" | 30-minute measured mAh per policy, on screen, from a USB meter. Plus a backlight A/B: same window with the LED tied to 3V3 vs. LEDC-gated. |
+| "Does it run on battery?" | Demo is mains-powered (12 V + USB) by design; we report measured supply current per policy from a USB meter, plus the backlight A/B. The §7 table is the battery-variant reference. |
+| "Resistive probes corrode — won't yours drift?" | Yes, over weeks, and that is exactly what the conservation gate is for: impossible mass balance ⇒ `SENSOR_DRIFT`, no labels needed. Gating stretches electrodes to a season. |
+| "ZJ-S201 says 450 p/L — trusted?" | No. Nominal only; the 500 mL volume calibration overwrites it, and every probe cycle re-validates against the reference ratio. |
 | "Why isn't the screen on the whole time?" | Deliberately. The backlight is the biggest single load in the node — 1 699 mAh/day wired the conventional way. It wakes on alarm, probe, or a button press. |
 | "What about multi-zone farms?" | One meter gives one zone. Attribution to a specific emitter needs a second meter — listed as a `Could`, not claimed. |
 
@@ -993,14 +995,17 @@ Each triggerable physically and via the dashboard launcher.
 
 ### 14.2 Honest limitations
 
-1. **Sub-1 L/min leaks are invisible.** The YF-S201's mechanical floor is ~1 L/min. A slow weep can persist indefinitely without tripping us. We integrate over long windows to catch what we can, but this needs a different sensor to truly fix.
+1. **Sub-1 L/min leaks are invisible.** The ZJ-S201's mechanical floor is ~1 L/min. A slow weep can persist indefinitely without tripping us. We integrate over long windows to catch what we can, but this needs a different sensor to truly fix.
 2. **One meter = one zone.** No multi-emitter localisation; a leak is attributed to *this* zone, not to a specific emitter.
-3. **Flow sensor accuracy is ±5 %**, so conservation ratios inherit that uncertainty. Ratios near 1.0 are within noise; only ratios far from 1.0 are actionable. Stated rather than hidden.
+3. **Flow accuracy is unquoted by the vendor**, so conservation ratios inherit that uncertainty — the 500 mL calibration IS the datasheet. Ratios near 1.0 are within noise; only ratios far from 1.0 are actionable. Stated rather than hidden.
 4. **The dataset has no fault labels and no flow channel.** All fault metrics come from our own injection protocol; all flow behaviour is hardware-measured or synthetically profiled.
 5. **`V_runoff ≈ 0` is an assumption** during short pulses. Valid for a 250 mL pulse; not valid for a full flood irrigation. Documented in §5.6.
 6. **Breadboard prototype.** Contact bounce and thermal drift are real; a PCB is future work.
-7. **Pump dominates energy.** Firmware optimisation extends node life ~79×, but the binding constraint on runtime remains irrigation duty cycle.
+7. **Pump dominates energy.** In the battery variant, firmware optimisation extends node life ~79×, but the binding constraint remains irrigation duty cycle. The demo build is mains-powered, so we report measured current per policy instead of days-per-charge.
 8. **DHT11 is weak** (±2 °C, ±20 % RH). Contextual only, never a primary gate.
+9. **Resistive probe corrodes.** DC through wet soil eats electrodes; gating (200 ms/sample) stretches this to a season, and the resulting slow drift is exactly what §5.6b detects as `SENSOR_DRIFT`. AC excitation is future work.
+10. **Bone-dry air can pin the ADC near rail** and read as `SENSOR_DISCONNECTED` — which is honest: a probe reading full-scale dry is out of the soil.
+11. **No battery in the demo BOM.** Off-grid life numbers (§7) are design reference; the demo reports measured supply current + 96 % bandwidth.
 
 ### 14.3 Glossary
 
@@ -1015,7 +1020,7 @@ Each triggerable physically and via the dashboard launcher.
 | **Guarded adaptation** | Baseline updates only from healthy samples, so faults can't be absorbed |
 | **Hysteresis** | Separate promote/demote thresholds, preventing alert flapping |
 | **PCNT** | ESP32 hardware pulse counter — counts flow pulses without CPU load, even in deep sleep |
-| **pulses/L** | YF-S201 calibration constant (nominal 5888), verified by volume at runtime |
+| **pulses/L** | ZJ-S201 calibration constant (nominal 450, F = 7.5 × Q), verified by volume at runtime |
 | **Backlight PWM** | LEDC-controlled dimming on GPIO9 — the largest single power lever in the UI (§7) |
 | **Label-free supervision** | Physical conservation laws yielding labelled faults without ground truth |
 

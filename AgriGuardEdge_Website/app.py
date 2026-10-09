@@ -141,7 +141,7 @@ def _store_ingest(device, kind, data, now, msg_id):
             f"VALUES ({now}, '{_q(device)}', '{_q(data.get('event', 'NONE'))}', "
             f"{evd.get('V_delivered_ml', 0)}, {evd.get('V_soil_delta_ml', 0)}, "
             f"{evd.get('residual_ratio', 0)}, {evd.get('ratio_vs_reference', 1)}, "
-            f"{evd.get('flow_calibrated_ppl', 5888)})")
+            f"{evd.get('flow_calibrated_ppl', 450)})")
     if kind == "summary":
         w = data.get("window", {})
         e = data.get("energy", {})
@@ -231,7 +231,7 @@ def _demo_summary(device, t, moisture, msgs_sent):
         "window": {"avg_moisture": moisture, "min": round(moisture - 3, 2),
                    "max": round(moisture + 3, 2), "std": 0.9,
                    "avg_temp": 26.4, "avg_rh": 61.0},
-        "energy": {"vbat": 3.9, "soc_pct": 76, "mah_today": 229.4},
+        "energy": {"vbat": 12.1, "soc_pct": 100, "mah_today": 229.4},
         "savings": {"readings_generated": 15, "messages_sent": msgs_sent,
                     "suppressed": 15 - msgs_sent},
     }, t, tag)
@@ -275,14 +275,14 @@ def _run_demo_scenario(device, name):
             "V_delivered_ml": 250.0, "V_soil_delta_ml": 211.9, "V_et_ml": 3.1,
             "residual_ratio": 0.14, "ratio_vs_reference": 1.0,
             "flow_rate_lpm": 4.2, "pump_state": "OFF",
-            "flow_calibrated_ppl": 5888, "cadence_s": 60})
+            "flow_calibrated_ppl": 450, "cadence_s": 60})
     elif name == "continuous_leak":
         _demo_summary(device, t + 1, 41.5, 2)
         _demo_event(device, t + 2, "alert", "CONTINUOUS_LEAK", "HIGH", {
             "state": "ALARM", "z_soil": -0.4, "cusum_up": 0.0, "cusum_down": 0.2,
             "baseline_moist": 41.8, "sigma": 0.9, "deficit": 0.5,
             "flow_rate_lpm": 1.4, "pump_state": "OFF",
-            "flow_calibrated_ppl": 5888, "cadence_s": 5,
+            "flow_calibrated_ppl": 450, "cadence_s": 5,
             "reason": "pump OFF but flow 1.4 L/min > leak eps 0.3 — moisture still normal, flow caught it"})
     elif name == "leak_probe":
         _demo_summary(device, t + 1, 38.7, 3)
@@ -293,7 +293,7 @@ def _run_demo_scenario(device, name):
             "V_delivered_ml": 250.0, "V_soil_delta_ml": 38.2, "V_et_ml": 3.1,
             "residual_ratio": 0.835, "ratio_vs_reference": 0.19,
             "flow_rate_lpm": 0.0, "pump_state": "OFF",
-            "flow_calibrated_ppl": 5888,
+            "flow_calibrated_ppl": 450,
             "state": "ALARM", "state_age_s": 240, "cadence_s": 5})
     elif name == "blockage":
         _demo_summary(device, t + 1, 39.9, 2)
@@ -301,7 +301,7 @@ def _run_demo_scenario(device, name):
             "state": "ALARM", "z_soil": -2.1, "cusum_up": 0.0, "cusum_down": 3.4,
             "baseline_moist": 41.8, "sigma": 0.9, "deficit": 2.0,
             "flow_rate_lpm": 0.0, "pump_state": "ON",
-            "flow_calibrated_ppl": 5888, "cadence_s": 5,
+            "flow_calibrated_ppl": 450, "cadence_s": 5,
             "reason": "pump ON but flow ~0 for 3 evals — kink downstream of meter reads as blockage, not leak"})
     elif name == "unplug_probe":
         _demo_summary(device, t + 1, 41.8, 2)

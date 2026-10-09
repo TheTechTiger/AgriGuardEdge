@@ -2,15 +2,20 @@
 
 Edge-native irrigation anomaly detection: the node builds a diurnal
 baseline, runs EWMA-CUSUM + persistence, and interrogates the field with
-controlled-volume probe cycles through a YF-S201 flow meter. Decisions,
+controlled-volume probe cycles through a ZJ-S201 flow meter. Decisions,
 not data. Full algorithm spec: `../docs/architechture.md`.
+
+FINAL BOM: ESP32-S3 N16R8 · relay module · 12 V pump (wall adapter) ·
+ZJ-S201 (450 p/L) · resistive soil probe · DHT11 · ST7735. Mains-powered
+demo (12 V + USB); no battery — §7's battery table is the off-grid
+design reference.
 
 ## Layout
 
 | Path | What |
 |---|---|
 | `src/main.cpp` | Scheduler: gated sensing → core → probe controller → TX → UI; RTC-persisted core across 60 s deep sleep |
-| `src/flow_pcnt.*` | YF-S201 capture: PCNT hardware unit, ISR-poll fallback, EMA rate + volume |
+| `src/flow_pcnt.*` | ZJ-S201 capture: PCNT hardware unit, ISR-poll fallback, EMA rate + volume |
 | `src/sensors.*` | Power-gated soil/battery (200 ms bursts), bit-bang DHT11, relay |
 | `src/ui_tft.*` | LVGL 9, 4 screens (LIVE / CONSERVATION / PROBE / ALERTS), PWM backlight + SLPIN |
 | `src/net_tx.*` | WiFi connect→send→disconnect, PSRAM 256-slot ring, idempotent `msg_id`, backoff |
@@ -32,20 +37,21 @@ cd ../../tools/anomaly_replay && make all # 12/12 injections, parity, metrics
 
 ## Bring-up order (do not skip)
 
-1. **Level-shift the flow sensor first** (5 V TTL → 3V3, divider or
-   74AHCT125, arch §6.2). Direct connection kills GPIO6.
+1. **Level-shift + 500 mL calibration first** (saves the GPIO; overwrites
+   the 450 p/L nominal — never trust the vendor number).
 2. Hand-pump 500 mL through the meter, count pulses, set
-   `pulses_per_litre` (NVS `ppl`, arch §5.7). Default 5888 is datasheet,
-   not truth.
-3. Mount the YF-S201 **vertical, arrow up**.
-4. One 18650 **with protection/BMS**; 1000 µF + flyback at the pump;
-   pump on USB + MCU on battery is an approved fallback.
-5. Backlight on GPIO9 PWM — never tie LED to 3V3 (costs ~1700 mAh/day).
+   `pulses_per_litre` (NVS `ppl`, arch §5.7). **Verify the relay clicks on
+   3.3 V logic and all GNDs are common before first power-up.**
+3. Mount the ZJ-S201 **vertical, arrow up**.
+4. 12 V adapter sized ≥ pump stall current; node on USB (demo) or buck.
+5. Backlight on GPIO9 PWM — never tie LED to 3V3.
 6. Soak a 10-min baseline, run a reference probe (hold BOOT 3 s), then
    demo scenarios (arch §11). Short BOOT press cycles screens.
 
 ## Honest limits (arch §14)
 
-Sub-1 L/min leaks invisible · one meter = one zone · ±5 % flow accuracy ·
-S3 PCNT can't count through deep sleep (see `../docs/ERRATA.md`) ·
-pump dominates energy — duty cycle, not firmware, sets battery life.
+Sub-1 L/min leaks invisible · one meter = one zone · unquoted flow
+accuracy (calibration IS the datasheet) · resistive probe corrodes
+(gating + conservation gate are the answer) · S3 PCNT can't count
+through deep sleep (see `../docs/ERRATA.md`) · mains-powered demo —
+energy claim is measured supply current per policy, not days-per-charge.

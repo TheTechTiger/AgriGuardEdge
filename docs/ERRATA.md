@@ -42,3 +42,23 @@ Found by testing, not by opinion. Each item quotes the arch section it deviates 
 8. **Server lives in `AgriGuardEdge_Website/`** (workspace folder), not a
    separate `backend/` dir; same Flask/SQLite skeleton as the reference
    project plus the §8.1 tables and §9 API/routes/panels.
+
+9. **Flow meter is a ZJ-S201 at 450 p/L, not 5888.** The arch's 5888
+   matches no YF/ZJ-family datasheet (F = 7.5 × Q → 450 p/L, confirmed
+   across vendors). At 450 p/L the rate is noisier at low flow — the EMA
+   stage carries more weight — while stop-on-volume (250 mL ≈ 112 pulses)
+   is unaffected. Bench calibration overwrites the nominal regardless.
+10. **Soil probe is resistive, not capacitive.** DC electrolysis eats the
+    electrodes if left powered, so GPIO7 gating is probe-preservation,
+    not just power-saving. Expected slow upward drift over weeks lands
+    exactly on the §5.6b `SENSOR_DRIFT` trip — the design already answers
+    its own weakest sensor. Bone-dry air can pin the ADC near rail and
+    correctly reads as `SENSOR_DISCONNECTED` (probe out of soil).
+11. **No battery: 12 V pump on a wall adapter, node on USB/buck.**
+    `cfg.batt_low_v` (default 3.4 V cell) is set to 10.5 V for the 12 V
+    rail sensed through 100 k/27 k on GPIO2. §7's mAh table is kept as
+    the battery-variant design reference; the demo reports measured
+    supply current per policy + the 96 % bandwidth number.
+12. **Summaries carry real window/energy/savings** (RTC accumulators
+    across deep sleeps; mains SoC sent as 100, `mah_today` 0 — no current
+    sensor, §1.3) instead of the zeros the first firmware sent.
