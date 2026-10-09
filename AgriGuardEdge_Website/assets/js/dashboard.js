@@ -151,7 +151,9 @@ function renderAlerts(events) {
     const cons =
       ev.V_delivered_ml !== undefined
         ? `V_del ${ev.V_delivered_ml} mL · V_soil ${ev.V_soil_delta_ml} mL · V_ET ${ev.V_et_ml} mL · ratio ${ev.residual_ratio}`
-        : `z ${ev.z_soil ?? "?"} · cusum↓ ${ev.cusum_down ?? "?"} · deficit ${ev.deficit ?? "?"}`;
+        : ev.scenario
+          ? `scenario marker "${ev.scenario}" — timeline bookmark, not an alert`
+          : `z ${ev.z_soil ?? "?"} · cusum↓ ${ev.cusum_down ?? "?"} · deficit ${ev.deficit ?? "?"}`;
     card.innerHTML =
       `<span class="badge ${SEV_BADGE[sev] || "bg-secondary"}">${sev}</span> ` +
       `<strong>${e.event}</strong> ` +
@@ -218,7 +220,7 @@ async function refresh() {
 document.addEventListener("DOMContentLoaded", () => {
   refresh();
   setInterval(refresh, 15000);
-  document.querySelectorAll("#scenarioBtns button").forEach((b) =>
+  document.querySelectorAll("#scenarioBtns button[data-scenario]").forEach((b) =>
     b.addEventListener("click", async () => {
       await fetch("/api/scenario", {
         method: "POST",
@@ -226,6 +228,17 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ scenario: b.dataset.scenario }),
       });
       refresh();
+      setTimeout(refresh, 600); // second pass once the rows commit
     })
   );
+  const reset = document.querySelector("#resetDemo");
+  if (reset) reset.addEventListener("click", async () => {
+    await fetch("/api/demo/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    refresh();
+    setTimeout(refresh, 600);
+  });
 });

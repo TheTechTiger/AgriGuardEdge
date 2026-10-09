@@ -28,7 +28,8 @@ after first use.
 | `GET /api/events` · `/api/summary` · `/api/energy` · `/api/probes` | Dashboard data (`?device_id=esp32_01`) |
 | `GET /api/status` | Node last-seen / online (from ingest, no legacy tables) |
 | `POST /api/ack` | Acknowledge an alert (login required) |
-| `POST /api/scenario` | Record a demo scenario on the timeline (login required) |
+| `POST /api/scenario` | Demo fault injection (§11, demo-only): timeline marker **plus** the exact summary/probe/alert rows a real node would emit (tagged `demo` in evidence); first call seeds ~7.5 h baseline history (login required) |
+| `POST /api/demo/reset` | Wipe ingest-derived tables for a repeatable demo run (login required) |
 | `GET /health` | Liveness |
 
 ## Dashboard panels (arch §9)
