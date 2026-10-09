@@ -5,6 +5,7 @@
 typedef struct {
   float moisture, flow_lpm, vbat, temp_c, rh_pct;
   char ssid[32], ip[16];
+  uint32_t leak_pulses;      // pump-OFF pulses in the micro-leak window
   int state;               // 0 NORMAL 1 SUSPECT 2 ALARM
   const char *event;       // latest event name
   // conservation (screen 2)

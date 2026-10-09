@@ -68,6 +68,13 @@
 #define AG_DEMO_LIVE_1S 0      // judges: sensor eval + display refresh every
                                // 1 s, no deep sleep. Set 0 to restore the
                                // adaptive cadence (60/10/5 s + sleep).
+// ---------- Micro-leak watch (sub-1 L/min: pulse integration, not rate) ----------
+// The turbine can't meter below ~1 L/min, but ANY repeatable pulses with
+// the pump OFF mean water is moving. Thresholds tuned so bench vibration
+// (≈0 pulses) never trips: 20 pulses ≈ 44 mL over the window.
+#define AG_MICRO_LEAK_PULSES 20
+#define AG_MICRO_LEAK_WINDOW_S 900
+
 // ---------- Probe schedule (needs a PRIMED water loop — pump dry = damage) ----------
 #define AG_PROBE_EVERY_S (4*3600)  // periodic audit, 6/day (§5.7, §7 duty)
 

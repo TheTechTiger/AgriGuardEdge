@@ -35,6 +35,9 @@ static char alert_ring[3][96];
 RTC_DATA_ATTR static uint32_t rtc_last_summary_up = 0;
 RTC_DATA_ATTR static uint32_t rtc_last_probe_up = 0;
 RTC_DATA_ATTR static int rtc_summary_div = 0;
+RTC_DATA_ATTR static uint32_t rtc_lk_total0 = 0;  // micro-leak window start
+RTC_DATA_ATTR static uint32_t rtc_lk_t0 = 0;
+RTC_DATA_ATTR static uint8_t rtc_lk_fired = 0;
 // Summary window accumulators (RTC: a 15-min window spans deep sleeps).
 RTC_DATA_ATTR static float rtc_wsum = 0, rtc_wsum2 = 0;
 RTC_DATA_ATTR static float rtc_wmin = 1e9f, rtc_wmax = -1e9f;
@@ -224,6 +227,32 @@ static void probe_cycle(bool mark_reference) {
   rtc_last_probe_up = uptime_s(); rtc_probing = 0;
 }
 
+static void tx_micro_leak(uint32_t pulses, uint32_t window_s, float rate) {
+  // Firmware-level verdict (long-window integration lives here, not in the
+  // per-eval core): sub-floor leak while the pump was OFF the whole window.
+  char id[48];
+  msg_id(id, sizeof(id));
+  JsonDocument d;
+  d["msg_id"] = id;
+  d["device_id"] = AG_DEVICE_ID;
+  d["boot_count"] = boot_count;
+  d["uptime_ms"] = millis() + rtc_total_sleep_s * 1000UL;
+  d["kind"] = "alert";
+  d["event"] = "MICRO_LEAK";
+  d["severity"] = "MED";
+  JsonObject e = d["evidence"].to<JsonObject>();
+  e["off_pulses"] = pulses;
+  e["window_s"] = window_s;
+  e["impl_max_lpm"] = 60.0f * pulses / AG_PPL_DEFAULT / window_s;
+  e["state"] = rtc_core.state == 2 ? "ALARM" : (rtc_core.state == 1 ? "SUSPECT" : "NORMAL");
+  e["flow_rate_lpm"] = rate;
+  e["pump_state"] = "OFF";
+  e["reason"] = "pulses with pump OFF all window: below meter floor, above zero";
+  char buf[384];
+  serializeJson(d, buf, sizeof(buf));
+  if (tx_queue("alert", buf)) tx_flush();
+}
+
 void loop() {
   static uint32_t eval_ms = 0;
   static int8_t prev_man = -1;
@@ -273,6 +302,29 @@ void loop() {
   prev_man = man;
   bool pump_on = digitalRead(PIN_RELAY);
   if (!rtc_probing && !pump_on) flow_power(false);  // gate when idle
+
+  // ---- micro-leak watch: integrate pump-OFF pulses over a long window ----
+  // Rate-based CONTINUOUS_LEAK cannot see below ~1 L/min; a slow weep still
+  // twitches the turbine. Any pump ON (or probe) restarts the window.
+  uint32_t lk_pulses = 0;
+  if (pump_on || rtc_probing) {
+    rtc_lk_total0 = flow_pulses_total();
+    rtc_lk_t0 = uptime_s();
+    rtc_lk_fired = 0;
+  } else {
+    if (rtc_lk_t0 == 0) {
+      rtc_lk_total0 = flow_pulses_total();
+      rtc_lk_t0 = uptime_s();
+    }
+    lk_pulses = flow_pulses_total() - rtc_lk_total0;  // wrap-safe
+    uint32_t lk_dt = uptime_s() - rtc_lk_t0;
+    if (!rtc_lk_fired && lk_dt >= AG_MICRO_LEAK_WINDOW_S &&
+        lk_pulses >= AG_MICRO_LEAK_PULSES) {
+      rtc_lk_fired = 1;
+      note_alert("MICRO_LEAK", "MED");
+      tx_micro_leak(lk_pulses, lk_dt, rate);
+    }
+  }
 
   // ---- window accumulators (feed the next real summary) ----
   rtc_wsum += moist; rtc_wsum2 += moist * moist; rtc_wn++; rtc_evals++;
@@ -353,6 +405,7 @@ void loop() {
   us.event = ev_name ? ev_name
              : (r.event != AG_EV_NONE ? ag_event_name(r.event) : "OK");
   us.pump_on = pump_on;
+  us.leak_pulses = lk_pulses;
   us.alert0 = alert_ring[0]; us.alert1 = alert_ring[1]; us.alert2 = alert_ring[2];
   { uint32_t st = tx_sent_total(), sp = tx_suppressed_total();
     us.bw_saved_pct = (st + sp) ? (100.0f * sp / (st + sp)) : 0; }

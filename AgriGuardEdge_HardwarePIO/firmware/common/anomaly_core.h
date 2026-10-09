@@ -76,6 +76,7 @@ typedef enum {
     AG_EV_NONE = 0,
     AG_EV_IRRIGATION_OK,
     AG_EV_CONTINUOUS_LEAK,
+    AG_EV_MICRO_LEAK,
     AG_EV_LEAK_SEVERE,
     AG_EV_LEAK_OR_BYPASS,
     AG_EV_OVER_IRRIGATION,
@@ -632,6 +633,7 @@ static inline const char *ag_event_name(ag_event_t e) {
     case AG_EV_NONE: return "NONE";
     case AG_EV_IRRIGATION_OK: return "IRRIGATION_OK";
     case AG_EV_CONTINUOUS_LEAK: return "CONTINUOUS_LEAK";
+    case AG_EV_MICRO_LEAK: return "MICRO_LEAK";
     case AG_EV_LEAK_SEVERE: return "LEAK_SEVERE";
     case AG_EV_LEAK_OR_BYPASS: return "LEAK_OR_BYPASS";
     case AG_EV_OVER_IRRIGATION: return "OVER_IRRIGATION";

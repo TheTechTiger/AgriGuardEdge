@@ -995,7 +995,7 @@ Each triggerable physically and via the dashboard launcher.
 
 ### 14.2 Honest limitations
 
-1. **Sub-1 L/min leaks are invisible.** The ZJ-S201's mechanical floor is ~1 L/min. A slow weep can persist indefinitely without tripping us. We integrate over long windows to catch what we can, but this needs a different sensor to truly fix.
+1. **Sub-1 L/min leaks are invisible to the rate meter.** The ZJ-S201's mechanical floor is ~1 L/min. A slow weep still twitches the turbine, so the firmware integrates pump-OFF pulses over a 15-min window (≥20 pulses ⇒ `MICRO_LEAK`, MED) — volume-accurate even where rate is meaningless. Truly motionless water below that remains invisible; this needs a different sensor to truly fix.
 2. **One meter = one zone.** No multi-emitter localisation; a leak is attributed to *this* zone, not to a specific emitter.
 3. **Flow accuracy is unquoted by the vendor**, so conservation ratios inherit that uncertainty — the 500 mL calibration IS the datasheet. Ratios near 1.0 are within noise; only ratios far from 1.0 are actionable. Stated rather than hidden.
 4. **The dataset has no fault labels and no flow channel.** All fault metrics come from our own injection protocol; all flow behaviour is hardware-measured or synthetically profiled.

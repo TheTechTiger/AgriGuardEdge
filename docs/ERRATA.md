@@ -100,3 +100,10 @@ Found by testing, not by opinion. Each item quotes the arch section it deviates 
     plus a 3-min no-sleep grace so the first link establishes. Found
     because the ESP joined the LAN (192.168.1.27, pings flowing) only in
     a probe sketch with a single blocking begin.
+19. **Sub-floor leaks via pulse integration (`MICRO_LEAK`).** Rate-based
+    detection is blind below ~1 L/min, so the firmware integrates
+    pump-OFF PCNT pulses over 15 min (≥20 ⇒ MED alert with pulse/window
+    evidence + live `Lk` counter on the TFT). Verified end-to-end with a
+    forced window (fired, ingested id 2119, rendered); production
+    thresholds restored after. A fully motionless weep is still
+    invisible — stated in §14.1.

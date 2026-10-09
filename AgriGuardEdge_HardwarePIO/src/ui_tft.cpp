@@ -174,9 +174,9 @@ void ui_boot_splash(uint32_t boot_n, int pcnt_ok) {
 
 void ui_update(const ui_snapshot_t *s) {
   char b[256];
-  snprintf(b, sizeof(b), "%d|%.1f|%.2f|%.2f|%.1f|%.0f|%.15s|%.31s|%s|%.0f|%.0f|%.0f|%.0f|%.3f|%d|%u",
+  snprintf(b, sizeof(b), "%d|%.1f|%.2f|%.2f|%.1f|%.0f|%.15s|%.31s|%u|%s|%.0f|%.0f|%.0f|%.0f|%.3f|%d|%u",
            s->state, s->moisture, s->flow_lpm, s->vbat, s->temp_c, s->rh_pct,
-           s->ssid, s->ip,
+           s->ssid, s->ip, s->leak_pulses,
            s->event ? s->event : "-", s->v_del, s->v_soil, s->v_et,
            s->v_resid, s->ratio, s_cur, s->next_tx_s);
   if (!strcmp(b, s_last)) return;  // redraw-on-change only
@@ -193,8 +193,8 @@ void ui_update(const ui_snapshot_t *s) {
     lv_label_set_text_fmt(liveFlow, "Soil %.1f %%  %.1fC %.0f%%RH",
                           s->moisture, s->temp_c, s->rh_pct);
   lv_label_set_text_fmt(liveBatt, "%.1fV", s->vbat);
-  lv_label_set_text_fmt(liveTx, "%s %s\ntx %us · %0.f%% svd", s->ssid, s->ip,
-                        s->next_tx_s, s->bw_saved_pct);
+  lv_label_set_text_fmt(liveTx, "%s %s\ntx %us · %0.f%% · Lk%u", s->ssid, s->ip,
+                        s->next_tx_s, s->bw_saved_pct, s->leak_pulses);
 
   lv_bar_set_value(conBars[0], (int)s->v_del, LV_ANIM_OFF);
   lv_bar_set_value(conBars[1], (int)s->v_soil, LV_ANIM_OFF);

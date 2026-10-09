@@ -251,10 +251,9 @@ flow non-zero, somebody's valve is weeping money into the soil right now."
 
 ## Slide 12 — Demo plan (30 s, then DO it)
 
-1. Login → dashboard (all 7 panels live).
-2. Scenario click → alert lands with evidence JSON → ack it.
-3. Replay output: 12/12, rain silent, drift caught.
-4. (If rig present) loosen fitting → `CONTINUOUS_LEAK`; kink → `BLOCKAGE`.
+1. Login → dashboard (panels fill from the live node).
+2. Unplug the soil probe → fault alert lands with evidence JSON → ack it.
+3. Hold BOOT 3 s — reference probe; crack a fitting, wait for the audit.
 
 **Visual:** demo flowchart (scenarios §11, defensive order 1→2→6→8→9→3→4→5).
 **Backup:** recorded video of every scenario (arch §12: record by H+18).
