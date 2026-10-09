@@ -55,6 +55,10 @@
 // ---------- Supply monitoring (12 V rail, 100k/27k → ×4.7037) ----------
 #define AG_SUPPLY_LOW_V  10.5f    // adapter sag / brownout ⇒ POWER_LOW
 
+// ---------- Display demo override ----------
+#define AG_DEMO_DISPLAY_ON 1   // judges: backlight FULL always, never dim/sleep.
+                               // Set 0 to restore §9.1 power discipline.
+
 // ---------- TX policy (§7.1: defended 96 %, adaptive → 99 %) ----------
 #define AG_SUMMARY_EVERY_S   900  // 15 min → 96/day fixed
 #define AG_ADAPTIVE_DIV       4   // send every 4th unless CUSUM active

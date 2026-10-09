@@ -13,6 +13,7 @@ static const uint16_t SCR_W = 160, SCR_H = 128;
 static TFT_eSPI tft = TFT_eSPI();
 static lv_display_t *disp;
 static lv_color_t buf1[160 * 32], buf2[160 * 32];
+static volatile uint32_t s_flushes = 0;
 
 static void my_flush(lv_display_t *d, const lv_area_t *a, uint8_t *px) {
   uint32_t w = a->x2 - a->x1 + 1, h = a->y2 - a->y1 + 1;
@@ -22,6 +23,7 @@ static void my_flush(lv_display_t *d, const lv_area_t *a, uint8_t *px) {
   tft.dmaWait();
   tft.endWrite();
   lv_display_flush_ready(d);
+  s_flushes++;
 }
 
 #if ESP_ARDUINO_VERSION_MAJOR >= 3
@@ -213,6 +215,12 @@ void ui_update(const ui_snapshot_t *s) {
 }
 
 void ui_power_tick(int state, int probe_active, uint32_t last_ms) {
+#if AG_DEMO_DISPLAY_ON
+  // Judges demo: panel stays fully lit. No dim, no SLPIN, ever.
+  ui_wake_panel();
+  blWrite(255);
+  return;
+#else
   uint16_t duty;
   uint32_t idle = millis() - last_ms;
   if (state == 2 || probe_active) duty = 255;
@@ -221,6 +229,7 @@ void ui_power_tick(int state, int probe_active, uint32_t last_ms) {
   else duty = 0;
   if (!duty) ui_sleep_panel();
   else { ui_wake_panel(); blWrite((uint8_t)duty); }
+#endif
 }
 
 void ui_sleep_panel(void) {
