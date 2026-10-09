@@ -118,7 +118,7 @@ function renderEnergy(summaries, energy) {
   const sent = (energy || []).reduce((a, e) => a + (e.tx_count || 0), 0);
   const generated = Math.max((summaries || []).length * 15, sent); // ~15 evals/summary
   const opts = {
-    series: [generated, sent],
+    series: [{ name: "messages", data: [generated, sent] }],
     chart: { height: 260, type: "bar", toolbar: { show: false } },
     xaxis: { categories: ["readings generated", "messages sent"] },
     colors: ["#6c757d", "#198754"],
