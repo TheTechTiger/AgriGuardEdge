@@ -24,24 +24,33 @@ function renderSoilTrace(summaries) {
     x: new Date(s.received_at * 1000).getTime(),
     y: s.avg_moisture,
   }));
-  // Diurnal baseline band from the summaries themselves: rolling mean ± 2σ
-  // (shaded envelope the anomaly must depart from — §9's key visual).
-  let band = [];
+  // Diurnal baseline band from the summaries themselves: mean ± 2σ drawn as
+  // two dashed edge lines. Plain line series only — the vendored ApexCharts
+  // build predates rangeArea support and crashes on that type.
+  const series = [{ name: "soil %", data: pts }];
   if (rows.length > 3) {
     const vals = rows.map((s) => s.avg_moisture);
     const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
     const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length) || 1;
-    band = pts.map((p) => ({ x: p.x, y: [mean - 2 * sd, mean + 2 * sd] }));
+    const hi = +(mean + 2 * sd).toFixed(2);
+    const lo = +(mean - 2 * sd).toFixed(2);
+    series.push(
+      { name: "baseline +2σ", data: pts.map((p) => ({ x: p.x, y: hi })) },
+      { name: "baseline −2σ", data: pts.map((p) => ({ x: p.x, y: lo })) }
+    );
   }
-  const series = [{ name: "soil %", data: pts, type: "line" }];
-  if (band.length) series.push({ name: "baseline ±2σ", data: band, type: "rangeArea" });
   const opts = {
     series,
     chart: { height: 300, type: "line", toolbar: { show: true } },
     xaxis: { type: "datetime" },
     yaxis: { title: { text: "%" } },
-    stroke: { width: [2, 0] },
-    fill: { opacity: [1, 0.25] },
+    // Arrays built to match the series count exactly — a longer array than
+    // series is another known way to upset old ApexCharts builds.
+    stroke: {
+      width: series.map((_, i) => (i === 0 ? 3 : 1)),
+      dashArray: series.map((_, i) => (i === 0 ? 0 : 5)),
+    },
+    colors: series.map((_, i) => (i === 0 ? "#0d6efd" : "#adb5bd")),
   };
   if (soilTraceChart) soilTraceChart.updateOptions(opts);
   else { soilTraceChart = new ApexCharts(el, opts); soilTraceChart.render(); }
