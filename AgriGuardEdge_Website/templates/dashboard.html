@@ -1,0 +1,104 @@
+{% extends "base.html" %} {% block title%} Dashboard {% endblock %} {% block
+content %}
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h1>Edge Anomaly Overview</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+                <li class="breadcrumb-item">Anomaly Detection</li>
+            </ol>
+        </nav>
+    </div>
+
+    <section class="section">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Live Soil Trace <span id="liveStateBadge" class="badge bg-success">OK</span></h5>
+                        <div id="soilTraceChart"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Detector State</h5>
+                        <h4><span id="stateBadge" class="badge bg-success">NORMAL</span></h4>
+                        <p class="small text-muted mb-1">CUSUM up <span id="cusumUp">0.00</span> · down <span id="cusumDown">0.00</span></p>
+                        <p class="small text-muted">z-soil <span id="zSoil">0.00</span> · deficit <span id="deficit">0.00</span>%</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Scenario Launcher</h5>
+                        <div class="d-grid gap-2" id="scenarioBtns">
+                            <button class="btn btn-outline-primary btn-sm" data-scenario="baseline">1 · Baseline soak</button>
+                            <button class="btn btn-outline-primary btn-sm" data-scenario="probe_ok">2 · Normal probe (250 mL)</button>
+                            <button class="btn btn-outline-danger btn-sm" data-scenario="continuous_leak">3 · ★ Loosen fitting (pump OFF)</button>
+                            <button class="btn btn-outline-danger btn-sm" data-scenario="leak_probe">4 · ★ Crack fitting + probe</button>
+                            <button class="btn btn-outline-warning btn-sm" data-scenario="blockage">5 · Kink hose + probe</button>
+                            <button class="btn btn-outline-secondary btn-sm" data-scenario="unplug_probe">6 · Unplug soil probe</button>
+                            <button class="btn btn-outline-secondary btn-sm" data-scenario="rain">9 · Simulate rain (no alert)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Conservation <span>/ per probe: delivered vs retained + residual</span></h5>
+                        <div id="conservationChart"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Flow <span>/ L/min, pump band behind</span></h5>
+                        <div id="flowChart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">CUSUM State Ladder</h5>
+                        <div id="cusumChart"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Energy &amp; Bandwidth <span>/ measured</span></h5>
+                        <div id="energyChart"></div>
+                        <p class="small text-muted" id="energyNote">readings generated vs messages sent</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Alert Stream <span>/ every card expands to its evidence</span></h5>
+                <div id="alertStream" class="d-flex flex-column gap-2"></div>
+            </div>
+        </div>
+    </section>
+</main>
+<!-- End #main -->
+<script>
+    const weatherDataFromServer = JSON.parse(`{{ weather_data | tojson | safe }}`);
+    const irrigationDataFromServer = JSON.parse(`{{ irrigation_data | tojson | safe }}`);
+</script>
+<script src="assets/js/dashboard.js"></script>
+
+{% endblock %}

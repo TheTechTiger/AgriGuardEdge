@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+
+    <title>{% block title %}{% endblock %} - AgriGuard Edge</title>
+    <meta content="" name="description" />
+    <meta content="" name="keywords" />
+
+    <style>
+        .unread-notification {
+            font-weight: bold;
+        }
+    </style>
+
+    <!-- Favicons -->
+    <link href="assets/img/favicon.png" rel="icon" />
+    <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon" />
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i"
+        rel="stylesheet" />
+
+    <!-- Vendor CSS Files -->
+    <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
+    <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet" />
+    <link href="assets/vendor/quill/quill.snow.css" rel="stylesheet" />
+    <link href="assets/vendor/quill/quill.bubble.css" rel="stylesheet" />
+    <link href="assets/vendor/remixicon/remixicon.css" rel="stylesheet" />
+    <link href="assets/vendor/simple-datatables/style.css" rel="stylesheet" />
+
+    <!-- Template Main CSS File -->
+    <link href="assets/css/style.css" rel="stylesheet" />
+
+<body>
+    <!-- ======= Header ======= -->
+    <header id="header" class="header fixed-top d-flex align-items-center">
+        <div class="d-flex align-items-center justify-content-between">
+            <a href="index.html" class="logo d-flex align-items-center">
+                <img src="assets/img/logo.png" alt="" />
+                <span class="d-none d-lg-block">AgriGuard Edge</span>
+            </a>
+            <i class="bi bi-list toggle-sidebar-btn"></i>
+        </div>
+        <!-- End Logo -->
+
+        <nav class="header-nav ms-auto">
+            <ul class="d-flex align-items-center">
+                <li class="nav-item dropdown">
+                    <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
+                        <i class="bi bi-bell"></i>
+                        <span class="badge bg-primary badge-number" hidden id="NotificationCount">0</span>
+                    </a><!-- End Notification Icon -->
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow notifications"
+                        id="notification-dropdown-list">
+                        <li class="dropdown-header" id="NotificatonCount-header">
+                            You have no new notifications
+                            <a hidden href="#"><span class="badge rounded-pill bg-primary p-2 ms-2">View all</span></a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider" />
+                        </li>
+                        <div id="notifications"></div>
+                        <li class="dropdown-footer">
+                            <a href="#">Show all notifications</a>
+                        </li>
+                    </ul>
+                    <!-- End Notification Dropdown Items -->
+                </li>
+                <!-- End Notification Nav -->
+                <li class="nav-item dropdown pe-3">
+                    <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
+                        <img src="{{ profile_data.profilePic }}" height="120" alt="Profile" class="rounded-circle" />
+                        <span class="d-none d-md-block dropdown-toggle ps-2">{{ profile_data.userName }}</span>
+                    </a><!-- End Profile Iamge Icon -->
+
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
+                        <li class="dropdown-header">
+                            <h6>{{ profile_data.userName }}</h6>
+                            <span>{{ profile_data.emailId }}</span>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider" />
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="/profile">
+                                <i class="bi bi-person"></i>
+                                <span>Profile</span>
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider" />
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="/FAQ">
+                                <i class="bi bi-question-circle"></i>
+                                <span>Need Help?</span>
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider" />
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="/login">
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span>Sign Out</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <!-- End Profile Dropdown Items -->
+                </li>
+                <!-- End Profile Nav -->
+            </ul>
+        </nav>
+        <!-- End Icons Navigation -->
+    </header>
+    <!-- End Header -->
+    <div id="notification-modals"></div>
+
+    <!-- ======= Sidebar ======= -->
+    <aside id="sidebar" class="sidebar">
+        <ul class="sidebar-nav" id="sidebar-nav">
+        </ul>
+    </aside>
+    <!-- End Sidebar-->
+    {% block content %}{% endblock %}
+    <!-- ======= Footer ======= -->
+    <footer id="footer" class="footer">
+        <div class="copyright">
+            &copy; Copyright <strong><span>AgriGuard Edge</span></strong>. All Rights Reserved
+        </div>
+        <div class="credits">
+            Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
+        </div>
+    </footer>
+    <!-- End Footer -->
+
+    <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i
+            class="bi bi-arrow-up-short"></i></a>
+
+    <!-- Vendor JS Files -->
+    <script src="assets/vendor/apexcharts/apexcharts.min.js"></script>
+    <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/vendor/chart.js/chart.umd.js"></script>
+    <script src="assets/vendor/echarts/echarts.min.js"></script>
+    <script src="assets/vendor/quill/quill.min.js"></script>
+    <script src="assets/vendor/simple-datatables/simple-datatables.js"></script>
+    <script src="assets/vendor/tinymce/tinymce.min.js"></script>
+    <script src="assets/vendor/php-email-form/validate.js"></script>
+
+    <!-- Template Main JS File -->
+    <script src="assets/js/main.js"></script>
+
+
+    <script>
+        function PopulateNavBar(items) {
+            const sidebarNav = document.getElementById("sidebar-nav");
+            sidebarNav.innerHTML = ""; // clear existing
+
+            const currentPath = window.location.pathname.split("/").pop();
+            items.forEach((item, index) => {
+                // Case: Section heading
+                if (item.length === 1) {
+                    const li = document.createElement("li");
+                    li.className = "nav-heading";
+                    li.textContent = item[0];
+                    sidebarNav.appendChild(li);
+                    return;
+                }
+
+                // Case: Sublist
+                if (item[0] === "SUBLIST") {
+                    const li = document.createElement("li");
+                    li.className = "nav-item";
+
+                    const a = document.createElement("a");
+                    a.className = "nav-link collapsed";
+                    const subId = item[2].toLowerCase() + "-nav";
+                    a.setAttribute("data-bs-target", "#" + subId);
+                    a.setAttribute("data-bs-toggle", "collapse");
+                    a.href = "#";
+                    a.innerHTML = `<i class="${item[1]}"></i><span>${item[2]}</span><i class="bi bi-chevron-down ms-auto"></i>`;
+                    li.appendChild(a);
+
+                    const ul = document.createElement("ul");
+                    ul.id = subId;
+                    ul.className = "nav-content collapse";
+                    ul.setAttribute("data-bs-parent", "#sidebar-nav");
+
+                    let isActiveSub = false;
+
+                    item[3].forEach((subItem) => {
+                        const subLi = document.createElement("li");
+                        const subA = document.createElement("a");
+                        subA.href = subItem[0].replace(/^\//, ""); // remove leading slash for consistency
+                        subA.innerHTML = `<i class="${subItem[1]}"></i><span>${subItem[2]}</span>`;
+
+                        if (subA.getAttribute("href") === currentPath) {
+                            subA.classList.add("active");
+                            a.classList.remove("collapsed");
+                            ul.classList.add("show");
+                            isActiveSub = true;
+                        }
+
+                        subLi.appendChild(subA);
+                        ul.appendChild(subLi);
+                    });
+
+                    li.appendChild(ul);
+                    sidebarNav.appendChild(li);
+                    return;
+                }
+
+                // Case: Simple link
+                const li = document.createElement("li");
+                li.className = "nav-item";
+
+                const a = document.createElement("a");
+                a.className = "nav-link collapsed";
+                a.href = item[0].replace(/^\//, ""); // remove leading slash for consistency
+                a.innerHTML = `<i class="${item[1]}"></i><span>${item[2]}</span>`;
+
+                if (a.getAttribute("href") === currentPath) {
+                    a.classList.remove("collapsed");
+                }
+
+                li.appendChild(a);
+                sidebarNav.appendChild(li);
+            });
+        }
+
+        function timeAgo(datetimeString) {
+            const now = new Date();
+            const past = new Date(datetimeString.replace(" ", "T")); // ensure proper parsing
+            const diffInSeconds = Math.floor((now - past) / 1000);
+
+            const intervals = [
+                { label: "year", seconds: 31536000 },
+                { label: "month", seconds: 2592000 },
+                { label: "day", seconds: 86400 },
+                { label: "hour", seconds: 3600 },
+                { label: "min", seconds: 60 },
+                { label: "second", seconds: 1 }
+            ];
+
+            for (let i = 0; i < intervals.length; i++) {
+                const interval = intervals[i];
+                const count = Math.floor(diffInSeconds / interval.seconds);
+                if (count >= 1) {
+                    return `${count} ${interval.label}${count > 1 ? "s" : ""} ago`;
+                }
+            }
+            return "just now";
+        }
+
+        function addNotification(id, iconName, heading, description, time, read) {
+            const notificationList = document.getElementById("notifications");
+            const compressedDesc = description.length > 50 ? description.slice(0, 50) + "..." : description;
+            let inner = `
+                            <li class="notification-item" data-bs-toggle="modal" data-bs-target="#notificationModal-${id}">
+                                <i class="${iconName}"></i>
+                                <div class="${read == 0 ? 'unread-notification' : ''}">
+                                    <h4>${heading}</h4>
+                                    <p>${compressedDesc}</p>
+                                    <p>${time}</p>
+                                </div>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            `;
+            notificationList.innerHTML = inner + notificationList.innerHTML;
+            document.getElementById("notification-modals").innerHTML += `
+                        <div class="modal fade" id="notificationModal-${id}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">${heading}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            ${description}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <form method="post" action="/mark-notification-read">
+                                                <input type="hidden" name="notification_id" value="${id}">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                <button type="submit" class="btn btn-primary" ${read == 1 ? "disabled" : ""}>${read == 1 ? "Notification already read" : "Mark As read"}</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+            const badge = document.getElementById("NotificationCount");
+            if (read == 0) {
+                let count = parseInt(badge.textContent, 10);
+                count += 1;
+                badge.textContent = count;
+                badge.hidden = false;
+                const header = document.getElementById("NotificatonCount-header");
+                header.childNodes[0].nodeValue = `You have ${count} new notifications`;
+                const viewAllLink = header.querySelector("a");
+                viewAllLink.hidden = false;
+            }
+        }
+
+        const categories = {
+            "info": "bi bi-info-circle text-primary",
+            "warn": "bi bi-exclamation-circle text-warning",
+            "success": "bi bi-check-circle text-success",
+            "danger": "bi bi-x-circle text-danger"
+        };
+        const notificationListArray = JSON.parse(`{{ notifications | tojson | safe }}`);
+
+        notificationListArray.forEach(element => {
+            addNotification(
+                element.id,
+                categories[element.category],
+                element.title,
+                element.description,
+                timeAgo(element.dateTime),
+                element.read
+            );
+        });
+        PopulateNavBar([
+            ["/dashboard", "bi bi-grid", "Dashboard"],
+            [
+                "SUBLIST",
+                "ri-plant-line",
+                "Irrigation",
+                [
+                    ["/irrigation-rules", "bi bi-circle", "Current Schedule"],
+                    ["/periodic-irrigation", "bi bi-circle", "Periodic Irrigation"],
+                    ["/sensor-triggered-irrigation", "bi bi-circle", "Sensor Triggered Irrigation"],
+                    ["/manual-irrigation", "bi bi-circle", "Manual Control"],
+                    ["/auto-irrigation", "bi bi-circle", "AI Suggested Irrigation"],
+                ],
+            ],
+            ["/chat", "ri-robot-fill", "Chat With AgriGuard"],
+            ["Pages"],
+            ["/profile", "bi bi-person", "Profile"],
+            ["/FAQ", "bi bi-question-circle", "FAQ"],
+            ["/ContactUs", "bi bi-envelope", "Contact"],
+            ["/login", "bi bi-box-arrow-right", "Log Out"],
+        ]);
+
+
+        
+
+    </script>
+</body>
+
+</html>

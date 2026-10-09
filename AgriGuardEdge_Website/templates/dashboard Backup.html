@@ -1,0 +1,814 @@
+{% extends "base.html" %} {% block title%} Dashboard {% endblock %} {% block
+content %}
+
+<!-- css added to hide the scrollbar in weather forecast section -->
+<style>
+    .hide-scrollbar {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+</style>
+
+
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h1>Farm Overview Page</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+                <li class="breadcrumb-item">Farm Overview</li>
+            </ol>
+        </nav>
+    </div>
+    <!-- End Page Title -->
+
+    <section class="section">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Farm Stats<span>/Today</span></h5>
+
+                <!-- Line Chart -->
+                <div id="reportsChart"></div>
+
+                <script>
+                    document.addEventListener("DOMContentLoaded", () => {
+                        new ApexCharts(document.querySelector("#reportsChart"), {
+                            series: [
+                                {
+                                    name: "Temperature",
+                                    data: [
+                                        11, 11, 11, 12, 13, 15, 18, 21, 24, 26, 28, 29, 29, 29,
+                                        28, 27, 25, 23, 21, 19, 18, 17, 16, 15,
+                                    ],
+                                },
+                                {
+                                    name: "Humidity",
+                                    data: [
+                                        38, 36, 34, 30, 26, 22, 20, 19, 19, 19, 19, 19, 19, 20,
+                                        22, 25, 29, 33, 38, 43, 48, 52, 55, 58,
+                                    ],
+                                },
+                            ],
+                            chart: {
+                                height: 350,
+                                type: "area",
+                                toolbar: {
+                                    show: true,
+                                },
+                            },
+                            markers: {
+                                size: 4,
+                            },
+                            colors: ["#4154f1", "#2eca6a", "#ff771d"],
+                            fill: {
+                                type: "gradient",
+                                gradient: {
+                                    shadeIntensity: 1,
+                                    opacityFrom: 0.3,
+                                    opacityTo: 0.4,
+                                    stops: [0, 90, 100],
+                                },
+                            },
+                            dataLabels: {
+                                enabled: true,
+                            },
+                            stroke: {
+                                curve: "smooth",
+                                width: 2,
+                            },
+                            xaxis: {
+                                type: "datetime",
+                                categories: [
+                                    "2025-12-19T00:00:00.000Z",
+                                    "2025-12-19T01:00:00.000Z",
+                                    "2025-12-19T02:00:00.000Z",
+                                    "2025-12-19T03:00:00.000Z",
+                                    "2025-12-19T04:00:00.000Z",
+                                    "2025-12-19T05:00:00.000Z",
+                                    "2025-12-19T06:00:00.000Z",
+                                    "2025-12-19T07:00:00.000Z",
+                                    "2025-12-19T08:00:00.000Z",
+                                    "2025-12-19T09:00:00.000Z",
+                                    "2025-12-19T10:00:00.000Z",
+                                    "2025-12-19T11:00:00.000Z",
+                                    "2025-12-19T12:00:00.000Z",
+                                    "2025-12-19T13:00:00.000Z",
+                                    "2025-12-19T14:00:00.000Z",
+                                    "2025-12-19T15:00:00.000Z",
+                                    "2025-12-19T16:00:00.000Z",
+                                    "2025-12-19T17:00:00.000Z",
+                                    "2025-12-19T18:00:00.000Z",
+                                    "2025-12-19T19:00:00.000Z",
+                                    "2025-12-19T20:00:00.000Z",
+                                    "2025-12-19T21:00:00.000Z",
+                                    "2025-12-19T22:00:00.000Z",
+                                    "2025-12-19T23:00:00.000Z",
+                                ],
+                            },
+                            tooltip: {
+                                x: {
+                                    format: "dd/MM/yy HH:mm",
+                                },
+                            },
+                        }).render();
+                    });
+                </script>
+                <!-- End Line Chart -->
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Water Tank Level</h5>
+
+                        <!-- Bar Chart -->
+                        <canvas id="barChart" style="max-height: 400px;display: block;height: 246px;width: 493px;" width="286" height="493"></canvas>
+                        <script>
+                            document.addEventListener("DOMContentLoaded", () => {
+                                let chart = null;
+
+                                function updateWaterTankChart(level) {
+                                    // level should be a number 0-100
+                                    if (!chart) {
+                                        chart = new Chart(document.querySelector("#barChart"), {
+                                            type: "bar",
+                                            data: {
+                                                labels: ["Current Level"],
+                                                datasets: [
+                                                    {
+                                                        label: "Water Tank Level (%)",
+                                                        data: [57],
+                                                        backgroundColor: ["rgba(54, 162, 235, 0.2)"],
+                                                        borderColor: ["rgb(54, 162, 235)"],
+                                                        borderWidth: 1,
+                                                    },
+                                                ],
+                                            },
+                                            options: {
+                                                scales: {
+                                                    y: {
+                                                        beginAtZero: true,
+                                                        max: 100,
+                                                        ticks: {
+                                                            callback: function (value) {
+                                                                return value + "%";
+                                                            },
+                                                        },
+                                                    },
+                                                },
+
+                                                plugins: {
+                                                    legend: { display: false },
+                                                    datalabels: {
+                                                        anchor: "end",
+                                                        align: "end",
+                                                        font: { weight: "bold" },
+                                                        formatter: function (value) {
+                                                            return value + "%";
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        });
+                                    } else {
+                                        chart.data.datasets[0].data = [level];
+                                        chart.update();
+                                    }
+                                }
+
+                                function fetchWaterLevel() {
+                                    fetch("/Get_ESPdata")
+                                        .then((response) => response.json())
+                                        .then((data) => {
+                                            // Replace 'water_level' with your actual field name from backend
+                                            console.log("Fetched water level:", data.graph[data.graph.length - 1].water_level);
+                                            const level = data.graph[data.graph.length - 1].water_level || 0;
+                                            updateWaterTankChart(level);
+                                        })
+                                        .catch((error) => {
+                                            console.error("Error fetching water level:", error);
+                                            updateWaterTankChart(0);
+                                        });
+                                }
+
+                                fetchWaterLevel(); // initial
+                                setInterval(fetchWaterLevel, 10000); // poll every 10s
+                            });
+                        </script>
+                        <!-- End Bar CHart -->
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Soil Moisture Level</h5>
+                        <!-- Radial chart -->
+                        <div id="soilMoistureChart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Battery level -->
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Battery Level</h5>
+                <div class="progress mt-3">
+                    <div class="progress-bar progress-bar-striped bg-success" role="progressbar" style="width: 100%"
+                        aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                        100%
+                    </div>
+                </div>
+                <!-- End Progress Bars with labels -->
+            </div>
+        </div>
+
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Weather</h5>
+                    <div class="section profile">
+                        <div class="row">
+                            <div class="col-xl-4">
+                                <div class="card">
+                                    <div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
+                                        <img src="assets\img\sun.png" alt="Profile" />
+                                        <h2>Kevin Anderson</h2>
+                                        <h3>Web Designer</h3>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-xl-8">
+                                <div class="card">
+                                    <div class="card-body pt-3">
+                                        <!-- Bordered Tabs -->
+                                        <div class="overflow-auto">
+                                            <ul class="nav nav-tabs nav-tabs-bordered flex-nowrap" role="tablist">
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link active" data-bs-toggle="tab"
+                                                        data-bs-target="#profile-overview" aria-selected="true"
+                                                        role="tab" fdprocessedid="n8helg">
+                                                        Precipitation
+                                                    </button>
+                                                </li>
+
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link" data-bs-toggle="tab"
+                                                        data-bs-target="#profile-edit" aria-selected="false"
+                                                        tabindex="-1" role="tab">
+                                                        Humidity
+                                                    </button>
+                                                </li>
+
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link" data-bs-toggle="tab"
+                                                        data-bs-target="#profile-settings" aria-selected="false"
+                                                        tabindex="-1" role="tab">
+                                                        Rain
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <!-- End Bordered Tabs -->
+                                        <div class="tab-content pt-2 mb-0">
+                                            <div class="tab-pane fade show active" id="profile-overview">
+                                                <div class="d-flex flex-nowrap overflow-auto gap-3 py-2 hide-scrollbar">
+                                                    <div class="card text-center flex-shrink-0 mb-0"
+                                                        style="width: 120px">
+                                                        <div class="card-body py-4">
+                                                            <div class="fw-semibold">Mon</div>
+                                                            <div class="fs-4">🌤️</div>
+                                                            <div class="small">28°C</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="card text-center flex-shrink-0 mb-0"
+                                                        style="width: 120px">
+                                                        <div class="card-body py-4">
+                                                            <div class="fw-semibold">Tue</div>
+                                                            <div class="fs-4">☀️</div>
+                                                            <div class="small">30°C</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="card text-center flex-shrink-0 mb-0"
+                                                        style="width: 120px">
+                                                        <div class="card-body py-4">
+                                                            <div class="fw-semibold">Wed</div>
+                                                            <div class="fs-4">🌧️</div>
+                                                            <div class="small">24°C</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="card text-center flex-shrink-0 mb-0"
+                                                        style="width: 120px">
+                                                        <div class="card-body py-4">
+                                                            <div class="fw-semibold">Thurs</div>
+                                                            <div class="fs-4">🌧️</div>
+                                                            <div class="small">24°C</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="card text-center flex-shrink-0 mb-0"
+                                                        style="width: 120px">
+                                                        <div class="card-body py-4">
+                                                            <div class="fw-semibold">Fri</div>
+                                                            <div class="fs-4">🌧️</div>
+                                                            <div class="small">24°C</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="card text-center flex-shrink-0 mb-0"
+                                                        style="width: 120px">
+                                                        <div class="card-body py-4">
+                                                            <div class="fw-semibold">Sat</div>
+                                                            <div class="fs-4">🌧️</div>
+                                                            <div class="small">24°C</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="card text-center flex-shrink-0 mb-0"
+                                                        style="width: 120px">
+                                                        <div class="card-body py-4">
+                                                            <div class="fw-semibold">Sun</div>
+                                                            <div class="fs-4">🌧️</div>
+                                                            <div class="small">24°C</div>
+                                                        </div>
+                                                    </div>
+
+
+
+                                                    <!-- more cards -->
+                                                </div>
+                                            </div>
+
+                                            <!-- Humidity -->
+                                            <div class="tab-pane fade" id="profile-edit" role="tabpanel"></div>
+
+                                            <!-- Rain -->
+                                            <div class="tab-pane fade" id="profile-settings" role="tabpanel"></div>
+
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- //badges -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Current Status</h5>
+                <div class="row">
+                    <div class="col-lg-6">
+                        <!-- Esp status -->
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Esp Status</h5>
+                                <h4>
+                                    <span id="espBadge" class="badge bg-secondary">Unknown</span>
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <!-- pump status -->
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Pump Status</h5>
+                                <h4>
+                                    <span id="pumpBadge" class="badge bg-secondary">Unknown</span>
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table Variants -->
+                <h5 class="card-title">Next Scheduled Irrigation</h5>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Date</th>
+                            <th scope="col">Time</th>
+                            <th scope="col">Duration</th>
+                            <th scope="col">Type</th>
+                        </tr>
+                    </thead>
+                    <tbody id="irrigationTableBody">
+                        <!-- Rows will be injected here -->
+                    </tbody>
+                </table>
+
+                <!-- End Table Variants -->
+
+            </div>
+        </div>
+        </div>
+    </section>
+</main>
+<!-- End #main -->
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const espBadge = document.getElementById("espBadge");
+        const pumpBadge = document.getElementById("pumpBadge");
+
+        const setBadge = (el, text, cls) => {
+            if (!el) return;
+            el.className = "badge " + cls;
+            el.textContent = text;
+        };
+
+        function updateEspStatus(val) {
+            if (val == 1) setBadge(espBadge, "Online", "bg-success");
+            else setBadge(espBadge, "Offline", "bg-danger");
+        }
+
+        function updatePumpStatus(val) {
+            if (val == 1) setBadge(pumpBadge, "On", "bg-success");
+            else if (val == 0) setBadge(pumpBadge, "Off", "bg-danger");
+            else setBadge(pumpBadge, "Not Reachable", "bg-secondary");
+        }
+
+        function checkEspData() {
+            fetch("/Get_ESPdata")
+                .then((response) => response.json())
+                .then((data) => {
+                    const entryTimestamp = new Date(data.ESP_Last_Scene);
+                    const currentTime = new Date();
+
+                    const diffMinutes = (currentTime - entryTimestamp) / (1000 * 60);
+
+                    if (diffMinutes > 5) {
+                        updateEspStatus(0);
+                        updatePumpStatus(3);
+                    } else {
+                        updateEspStatus(1);
+                        updatePumpStatus();
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error fetching ESP data:", error);
+                });
+        }
+        checkEspData();
+        setInterval(checkEspData, 60000);
+    });
+    document.addEventListener("DOMContentLoaded", function () {
+        const irrigationSchedule = [
+            {
+                date: "29-10-26",
+                time: "06:30 AM",
+                duration: "45 mins",
+                type: "Sprinkler"
+            },
+            {
+                date: "30-10-26",
+                time: "07:00 AM",
+                duration: "20 mins",
+                type: "Flood"
+            }
+        ];
+
+        const tableBody = document.getElementById("irrigationTableBody");
+
+        function parseDate(dateStr) {
+            const [day, month, year] = dateStr.split("-");
+            return new Date(`20${year}-${month}-${day}`);
+        }
+
+        // SORT
+        irrigationSchedule.sort((a, b) => {
+            return parseDate(a.date) - parseDate(b.date);
+        });
+
+        // EMPTY CHECK
+        if (irrigationSchedule.length === 0) {
+            tableBody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center text-muted">
+          No irrigation scheduled
+        </td>
+      </tr>
+    `;
+        } else {
+            irrigationSchedule.forEach((schedule, index) => {
+                const row = document.createElement("tr");
+
+                if (index === 0) {
+                    row.classList.add("table-primary");
+                }
+
+                row.innerHTML = `
+        <th scope="row">${schedule.date}</th>
+        <td>${schedule.time}</td>
+        <td>${schedule.duration}</td>
+        <td>${schedule.type}</td>
+      `;
+                tableBody.appendChild(row);
+            });
+        }
+    });
+
+
+    let battery_level = document.querySelector(".progress-bar");
+    let level = 80; // Example static value, replace with dynamic data as needed
+    function updateBatteryLevel(level) {
+        if (battery_level) {
+            battery_level.style.width = level + "%";
+            battery_level.setAttribute("aria-valuenow", level);
+            battery_level.textContent = level + "%";
+
+            if (level > 75) {
+                battery_level.className =
+                    "progress-bar progress-bar-striped bg-success";
+            } else if (level > 50) {
+                battery_level.className = "progress-bar progress-bar-striped bg-info";
+            } else if (level > 25) {
+                battery_level.className =
+                    "progress-bar progress-bar-striped bg-warning";
+            } else {
+                battery_level.className = "progress-bar progress-bar-striped bg-danger";
+            }
+        }
+    }
+
+    updateBatteryLevel(level);
+
+    let soilChart;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const options = {
+            series: [60, 45],
+
+            chart: {
+                type: "radialBar",
+                height: 420,
+            },
+
+            plotOptions: {
+                radialBar: {
+                    hollow: {
+                        size: "30%", // desktop
+                    },
+                    dataLabels: {
+                        name: {
+                            fontSize: "16px",
+                        },
+                        value: {
+                            fontSize: "14px",
+                        },
+                        total: {
+                            show: true,
+                            label: "Soil Moisture",
+                            formatter: (w) => w.globals.series[1] + "%",
+                        },
+                    },
+                },
+            },
+
+            labels: ["Recommended", "Actual"],
+            colors: ["#34cb34", "#008FFB"],
+
+            responsive: [
+                {
+                    breakpoint: 1200,
+                    options: {
+                        plotOptions: {
+                            radialBar: {
+                                hollow: { size: "35%" },
+                            },
+                        },
+                    },
+                },
+                {
+                    breakpoint: 992,
+                    options: {
+                        plotOptions: {
+                            radialBar: {
+                                hollow: { size: "40%" },
+                            },
+                        },
+                    },
+                },
+                {
+                    breakpoint: 768,
+                    options: {
+                        plotOptions: {
+                            radialBar: {
+                                hollow: { size: "45%" },
+                            },
+                        },
+                    },
+                },
+                {
+                    breakpoint: 480,
+                    options: {
+                        plotOptions: {
+                            radialBar: {
+                                hollow: { size: "65%" },
+                            },
+                        },
+                    },
+                },
+                {
+                    breakpoint: 375,
+                    options: {
+                        plotOptions: {
+                            radialBar: {
+                                hollow: { size: "50%" }, // smallest screens
+                            },
+                        },
+                    },
+                },
+                {
+                    breakpoint: 320,
+                    options: {
+                        chart: {
+                            height: 120, // ✅ whole SVG shrinks
+                        },
+                        plotOptions: {
+                            radialBar: {
+                                hollow: { size: "20%" }, // smallest screens
+                            },
+                        },
+                    },
+                },
+            ],
+        };
+
+        soilChart = new ApexCharts(
+            document.querySelector("#soilMoistureChart"),
+            options
+        );
+
+        soilChart.render();
+    });
+
+    function updateSoilMoisture(recommended, actual) {
+        soilChart.updateSeries([recommended, actual]);
+    }
+
+    // Weather Forecast Chart
+    const weatherData = {
+        precipitation: {
+            label: "Precipitation",
+            unit: "mm",
+            icon: "🌧️",
+            daily: [5, 0, 12, 8, 6, 10, 4]
+        },
+        humidity: {
+            label: "Humidity",
+            unit: "%",
+            icon: "💧",
+            daily: [70, 65, 80, 78, 75, 85, 72]
+        },
+        rain: {
+            label: "Rain Chance",
+            unit: "%",
+            icon: "☔",
+            daily: [40, 10, 90, 85, 60, 70, 50]
+        }
+    };
+
+    const days = ["Mon", "Tue", "Wed", "Thurs", "Fri", "Sat", "Sun"];
+    document.addEventListener("DOMContentLoaded", () => {
+        const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
+        const cardContainer = document.querySelector(
+            ".d-flex.flex-nowrap.overflow-auto"
+        );
+
+        const leftTitle = document.querySelector(".profile-card h2");
+        const leftSubtitle = document.querySelector(".profile-card h3");
+        const leftImage = document.querySelector(".profile-card img");
+
+        function getProfileImage(type, temperature) {
+            // Tab-specific override
+            if (type === "rain") return "assets/img/rain.png";
+            if (type === "humidity") return "assets/img/humidity.png";
+
+            // Temperature-based (precipitation tab)
+            if (temperature >= 30) return "assets/img/sun.png";
+            if (temperature >= 25) return "assets/img/cloud.png";
+            return "assets/img/cold.png";
+        }
+
+        function updateUI(type) {
+            const data = weatherData[type];
+
+            // Assume temp comes from precipitation for demo
+            const currentTemp = 28; // 🔥 replace with API later
+            const todayValue = data.daily[0];
+
+            // 🔹 Update left card text
+            leftTitle.textContent = `${currentTemp}°C`;
+            leftSubtitle.textContent = `${data.label}: ${todayValue}${data.unit}`;
+
+            // 🔹 Update left image
+            leftImage.src = getProfileImage(type, currentTemp);
+
+            // 🔹 Clear old cards
+            cardContainer.innerHTML = "";
+
+            // 🔹 Rebuild cards
+            data.daily.forEach((value, index) => {
+                const card = document.createElement("div");
+                card.className = "card text-center flex-shrink-0 mb-0";
+                card.style.width = "120px";
+
+                card.innerHTML = `
+        <div class="card-body py-4">
+          <div class="fw-semibold">${days[index]}</div>
+          <div class="fs-4">${data.icon}</div>
+          <div class="small">${value}${data.unit}</div>
+        </div>
+      `;
+
+                cardContainer.appendChild(card);
+            });
+        }
+
+        // 🔹 Attach tab listeners
+        tabButtons.forEach((btn) => {
+            btn.addEventListener("shown.bs.tab", (e) => {
+                const target = e.target.textContent.trim().toLowerCase();
+
+                if (target.includes("precipitation")) updateUI("precipitation");
+                if (target.includes("humidity")) updateUI("humidity");
+                if (target.includes("rain")) updateUI("rain");
+            });
+        });
+
+        // 🔹 Initial load
+        updateUI("precipitation");
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const cardsWrapper = document.querySelector(
+            ".d-flex.flex-nowrap.overflow-auto"
+        );
+
+        document
+            .querySelectorAll('[data-bs-toggle="tab"]')
+            .forEach((tab) => {
+                tab.addEventListener("shown.bs.tab", () => {
+                    const activePane = document.querySelector(".tab-pane.active");
+
+                    // move Mon–Sun cards into the visible tab
+                    activePane.appendChild(cardsWrapper);
+                });
+            });
+    });
+
+    // Next Scheduled Irrigation Table - Future Enhancement Placeholder
+    const nextIrrigation = {
+        date: "28-10-26",
+        time: "10:00 AM",
+        duration: "30 mins",
+        type: "Drip"
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const tableBody = document.querySelector(
+            ".card-title + table tbody"
+        );
+
+        function updateNextIrrigation(data) {
+            // clear existing rows
+            tableBody.innerHTML = "";
+
+            // create row
+            const row = document.createElement("tr");
+            row.classList.add("table-primary");
+
+            row.innerHTML = `
+                <th scope="row">${data.date}</th>
+                <td>${data.time}</td>
+                <td>${data.duration}</td>
+                <td>${data.type}</td>
+                `;
+
+            tableBody.appendChild(row);
+        }
+
+        // initial load
+        updateNextIrrigation(nextIrrigation);
+    });
+
+
+</script>
+
+{% endblock %}

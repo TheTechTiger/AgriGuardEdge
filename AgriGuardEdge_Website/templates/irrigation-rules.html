@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title%} Active Rules {% endblock %}
+{% block content %}
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h1>Irrigation Control - Active Rules</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+                <li class="breadcrumb-item active">Irrigation Control</li>
+                <li class="breadcrumb-item active">Active Rules</li>
+            </ol>
+        </nav>
+    </div>
+
+
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th scope="col">Sr No</th>
+                <th scope="col">Plan Name</th>
+                <th scope="col">Active Start</th>
+                <th scope="col">Active End</th>
+                <th scope="col">Rules</th>
+
+            </tr>
+        </thead>
+        <tbody id="rulesTableBody">
+        </tbody>
+    </table>
+
+
+
+</main>
+<script>
+    function renderRulesTable(data) {
+        const tbody = document.getElementById("rulesTableBody");
+
+        if (!tbody) return;
+
+        tbody.innerHTML = "";
+
+        data.forEach((item, index) => {
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${item.plan_name}</td>
+      <td>${item.start}</td>
+      <td>${item.end}</td>
+      <td>${item.rules}</td>
+    `;
+
+            tbody.appendChild(row);
+        });
+    }
+
+    function calculateDuration(start, end) {
+        try {
+            const startTime = new Date("1970/01/01 " + start);
+            const endTime = new Date("1970/01/01 " + end);
+            const diff = (endTime - startTime) / 60000; // minutes
+            return diff > 0 ? diff + " min" : "--";
+        } catch {
+            return "--";
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        const rulesDataFromServer = {{ rules_data | tojson | safe }};
+        if (rulesDataFromServer.length==0) {
+            const tbody = document.getElementById("rulesTableBody");
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center">No active rules found.</td></tr>`;
+            }
+            return;
+        } else {renderRulesTable(rulesDataFromServer);}
+    });
+</script>
+<!-- <script src="assets/js/dashboard.js"></script> -->
+
+{% endblock %}

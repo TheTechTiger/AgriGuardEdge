@@ -1,0 +1,148 @@
+{% extends "base.html" %} {% block title%} Sensor Control {% endblock %} {%
+block content %}
+<main id="main" class="main">
+  <div class="pagetitle">
+    <h1>Irrigation Control - Sensor Control</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+        <li class="breadcrumb-item active">Irrigation Control</li>
+        <li class="breadcrumb-item active">Sensor Triggered Irrigation</li>
+      </ol>
+    </nav>
+  </div>
+  <!-- End Page Title -->
+
+  <section class="section">
+    <div class="row">
+      <div class="col">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Sensor Triggered Irrigation</h5>
+
+            <!-- Default Tabs -->
+
+            <div class="tab-content pt-2" id="myTabjustifiedContent">
+              <div class="tab-pane fade show active" id="home-justified" role="tabpanel" aria-labelledby="home-tab">
+                <!-- Vertical Form -->
+                <form class="row g-3" action="/sensor-triggered-irrigation" , method="post">
+                  <div class="col-12">
+                    <label for="planName" class="form-label" data-bs-toggle="tooltip" data-bs-placement="right"
+                      data-bs-original-title="Name your irrigation plan for easy
+                      identification.">Name</label>
+                    <input type="text" required name="planName" class="form-control" id="planName" /><br />
+
+                    <label for="frequencySelect" class="form-label" data-bs-toggle="tooltip" data-bs-placement="right"
+                      data-bs-original-title="Select the frequency of your irrigation schedule.">Frequency</label>
+                    <select id="frequencySelect" required name="frequency" class="form-select">
+                      <option value="daily">Daily</option>
+                      <option value="mon-fri">Mon to Fri</option>
+                      <option value="custom">Custom</option>
+                    </select><br />
+
+                    <div class="row mb-3" id="customDaysContainer" style="display: none;">
+                      <label class="col-sm-2 col-form-label">Select Days</label>
+
+                      <div class="col-sm-10">
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" name="day0" value="sunday" type="checkbox" id="sunday_input">
+                          <label class="form-check-label" for="sunday_input">Sunday</label>
+                        </div>
+
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" name="day1" value="monday" type="checkbox" id="monday_input">
+                          <label class="form-check-label" for="monday_input">Monday</label>
+                        </div>
+
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" name="day2" value="tuesday" type="checkbox"
+                            id="tuesday_input">
+                          <label class="form-check-label" for="tuesday_input">Tuesday</label>
+                        </div>
+
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" name="day3" value="wednesday" type="checkbox"
+                            id="wednesday_input">
+                          <label class="form-check-label" for="wednesday_input">Wednesday</label>
+                        </div>
+
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" name="day4" value="thursday" type="checkbox"
+                            id="thursday_input">
+                          <label class="form-check-label" for="thursday_input">Thursday</label>
+                        </div>
+
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" name="day5" value="friday" type="checkbox" id="friday_input">
+                          <label class="form-check-label" for="friday_input">Friday</label>
+                        </div>
+
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" name="day6" value="saturday" type="checkbox"
+                            id="saturday_input">
+                          <label class="form-check-label" for="saturday_input">Saturday</label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <label for="max_threshold" class="form-label" data-bs-toggle="tooltip" data-bs-placement="right"
+                      data-bs-original-title="Set the maximum soil moisture threshold for irrigation activation.">
+                      Maximum Threshold
+                    </label>
+                    <input type="number" class="form-control" id="max_threshold" name="max_threshold"
+                      required="" /><br />
+                    <label for="min_threshold" class="form-label" data-bs-toggle="tooltip" data-bs-placement="right"
+                      data-bs-original-title="Set the minimum soil moisture threshold for irrigation activation.">
+                      Minimum Threshold
+                    </label>
+                    <input type="number" class="form-control" id="min_threshold" name="min_threshold"
+                      required="" /><br />
+                  </div>
+
+                  <div class="col-12">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="ensureStrictness" name="ensureStrictness">
+                      <label class="form-check-label" for="ensureStrictness" data-bs-toggle="tooltip" data-bs-placement="right"
+                        data-bs-original-title="Enable this option to ensure your irrigation schedule is followed strictly.">
+                        Ensure Strictness
+                      </label>
+                    </div>
+                  </div>
+
+
+                  <div class="text-center">
+                    <button type="submit" class="btn btn-primary">
+                      Save Rule
+                    </button>
+                    <button type="reset" class="btn btn-secondary">
+                      Reset
+                    </button>
+                  </div>
+                </form>
+                <!-- Vertical Form -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  const frequencySelect = document.getElementById("frequencySelect");
+  const customDaysContainer = document.getElementById("customDaysContainer");
+
+
+
+  frequencySelect.addEventListener("change", function () {
+    if (this.value === "custom") {
+      customDaysContainer.style.display = "block";
+    } else {
+      customDaysContainer.style.display = "none";
+    }
+  });
+
+</script>
+
+{% endblock %}

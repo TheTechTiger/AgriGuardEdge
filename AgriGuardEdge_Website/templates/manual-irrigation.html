@@ -1,0 +1,168 @@
+{% extends "base.html" %} {% block title%} Irrigate Now {% endblock %} {% block
+content %}
+<main id="main" class="main">
+  <div class="pagetitle">
+    <h1>Start Irrigation Now</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+        <li class="breadcrumb-item active">Irrigation Control</li>
+        <li class="breadcrumb-item active">Manual Irrigation</li>
+      </ol>
+    </nav>
+  </div>
+  <!-- End Page Title -->
+
+  <section class="section">
+    <div class="row">
+      <div class="col">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Manual Irrigation Control</h5>
+
+            <!-- Default Tabs -->
+
+            <div class="tab-content pt-2" id="myTabjustifiedContent">
+              <form action="/manual-irrigation" method="POST">
+                <div class="tab-pane fade active show" id="manual-irrigation-tab" role="tabpanel"
+                  aria-labelledby="manual-tab">
+
+                  <div class="col-sm-12">
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="startOption" id="startNow" value="now" checked>
+                      <label class="form-check-label" for="startNow" data-bs-toggle="tooltip" data-bs-placement="right"
+                        data-bs-original-title="Start your irrigation immediately.">
+                        Start Irrigation Now
+                      </label>
+                    </div><br>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="startOption" id="scheduleLater" value="later">
+                      <label class="form-check-label" for="scheduleLater" data-bs-toggle="tooltip"
+                        data-bs-placement="right"
+                        data-bs-original-title="Schedule your irrigation for a later time or date.">
+                        Schedule Irrigation Later
+                      </label>
+                    </div><br>
+                    <div class="col-12" id="select_date" style="display: none;">
+                      <label for="select_date" class="col-sm-2 col-form-label">
+                        Select Date
+                      </label>
+                      <div class="col-sm-12">
+                        <input type="date" class="form-control" id="schedule_date">
+                      </div>
+                    </div>
+                  </div><br>
+                  <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <label for="duration" class="form-label mb-0" data-bs-toggle="tooltip" data-bs-placement="right"
+                        data-bs-original-title="Select the duration of each irrigation session.">Duration</label>
+                      <select name="unit" id="unit" class="form-select w-auto">
+                        <option value="minutes" selected>Minutes</option>
+                        <option value="seconds">Seconds</option>
+                      </select>
+                    </div>
+                    <input type="range" name="duration" class="form-range" id="duration" required min="1" max="180"
+                      step="1" value="30" aria-valuenow="30" />
+                    <div class="mt-2 range-display">
+                      <small>Selected duration:
+                        <span class="duration">30</span> <span id="unit-display">min</span></small>
+                    </div>
+                  </div>
+
+                  <div class="text-center">
+                    <button type="submit" class="btn btn-primary">Start</button>
+                    <button type="reset" class="btn btn-secondary">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  const durationSlider = document.getElementById('duration');
+  const durationDisplay = document.querySelector('.duration');
+  const unitSelect = document.getElementById('unit');
+  const unitDisplay = document.getElementById('unit-display');
+
+  function updateSliderBackground() {
+    const value = durationSlider.value;
+    const min = parseFloat(durationSlider.min);
+    const max = parseFloat(durationSlider.max);
+    const percent = ((value - min) / (max - min)) * 100;
+    durationSlider.style.setProperty("--percent", percent + "%");
+  }
+
+  // Update display and styling on slider input
+  durationSlider.addEventListener('input', function () {
+    durationDisplay.textContent = this.value;
+    this.setAttribute('aria-valuenow', this.value);
+    updateSliderBackground();
+  });
+
+  unitSelect.addEventListener('change', function () {
+    if (this.value === 'seconds') {
+      durationSlider.min = 5;
+      durationSlider.max = 60;
+      durationSlider.step = 5;
+      durationSlider.value = 30;
+      unitDisplay.textContent = 'sec';
+    } else {
+      durationSlider.min = 1;
+      durationSlider.max = 180;
+      durationSlider.step = 1;
+      durationSlider.value = 30;
+      unitDisplay.textContent = 'min';
+    }
+    durationDisplay.textContent = durationSlider.value;
+    durationSlider.setAttribute('aria-valuenow', durationSlider.value);
+    updateSliderBackground();
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const startNow = document.getElementById("startNow");
+    const scheduleLater = document.getElementById("scheduleLater");
+    const dateField = document.getElementById("select_date");
+
+    const style = document.createElement("style");
+    style.innerHTML = `
+    #duration::-webkit-slider-runnable-track {
+        height: 8px;
+        border-radius: 10px;
+        background: linear-gradient(to right, #4e6ddf var(--percent), #dee2e6 var(--percent));
+    }
+
+    #duration::-moz-range-track {
+        height: 8px;
+        border-radius: 10px;
+        background: linear-gradient(to right, #4e6ddf var(--percent), #dee2e6 var(--percent));
+    }
+`;
+    document.head.appendChild(style);
+
+    updateSliderBackground();
+
+    // Hide by default
+    dateField.style.display = "none";
+
+    startNow.addEventListener("change", function () {
+      if (this.checked) {
+        dateField.style.display = "none";
+      }
+    });
+
+    scheduleLater.addEventListener("change", function () {
+      if (this.checked) {
+        dateField.style.display = "block";
+      }
+    });
+  });
+</script>
+
+{% endblock %}

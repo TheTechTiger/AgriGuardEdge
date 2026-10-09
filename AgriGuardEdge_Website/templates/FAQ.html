@@ -1,0 +1,210 @@
+{% extends "base.html" %} {% block title%} FAQ {% endblock %} {% block content
+%}
+
+<main id="main" class="main">
+  <div class="pagetitle">
+    <h1>Frequently Asked Questions</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+        <li class="breadcrumb-item">Pages</li>
+        <li class="breadcrumb-item active">Frequently Asked Questions</li>
+      </ol>
+    </nav>
+  </div>
+  <!-- End Page Title -->
+
+  <section class="section faq">
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="card basic">
+          <div class="card-body">
+            <h5 class="card-title" id="basicQ">Basic Questions</h5>
+          </div>
+        </div>
+
+        <!-- F.A.Q Group 1 -->
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">System Overview</h5>
+            <div class="accordion accordion-flush" id="faq-group-1">
+            </div>
+          </div>
+        </div>
+        <!-- End F.A.Q Group 1 -->
+      </div>
+
+      <div class="col-lg-6">
+        <!-- F.A.Q Group 2 -->
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Hardware & Connectivity</h5>
+            <div class="accordion accordion-flush" id="faq-group-2">
+            </div>
+          </div>
+        </div>
+        <!-- End F.A.Q Group 2 -->
+
+        <!-- F.A.Q Group 3 -->
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Registration & Security</h5>
+            <div class="accordion accordion-flush" id="faq-group-3">
+            </div>
+          </div>
+        </div>
+        <!-- End F.A.Q Group 3 -->
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const faqData = [
+  { groupId: "faq-group-1", faqs: [] }, // System Overview
+  { groupId: "faq-group-2", faqs: [] }, // Hardware & Connectivity
+  { groupId: "faq-group-3", faqs: [] }, // Registration & Security
+];
+
+const basicfaqData = [
+    {
+        basicId: "basicQ" , basics: [] 
+    }
+]
+
+function renderBasic(basicIndex){
+    const basic = basicfaqData[basicIndex];
+    const cardContainer = document.getElementById(basic.basicId);
+    if (!cardContainer) return;
+
+    cardContainer.innerHTML = "";
+
+    basic.basics.forEach((faq, index) => {
+        const collapseId = `${faq.id}-collapse`;
+
+        cardContainer.insertAdjacentHTML("beforeend", `
+          <div>
+            <h6>${faq.question}</h6>
+            <p>${faq.answer}</p>
+          </div>
+        `);
+    });
+}
+
+
+
+function renderFaqGroup(groupIndex) {
+  const group = faqData[groupIndex];
+  const accordion = document.getElementById(group.groupId);
+  if (!accordion) return;
+
+  accordion.innerHTML = "";
+
+  group.faqs.forEach((faq, index) => {
+    const collapseId = `${faq.id}-collapse`;
+
+    accordion.insertAdjacentHTML("beforeend", `
+      <div class="accordion-item" id="${faq.id}">
+        <h2 class="accordion-header">
+          <button
+            class="accordion-button ${index !== 0 ? "collapsed" : ""}"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#${collapseId}"
+          >
+            ${faq.question}
+          </button>
+        </h2>
+        <div
+          id="${collapseId}"
+          class="accordion-collapse collapse ${index === 0 ? "show" : ""}"
+          data-bs-parent="#${group.groupId}"
+        >
+          <div class="accordion-body">
+            ${faq.answer}
+          </div>
+        </div>
+      </div>
+    `);
+  });
+}
+
+faqData[0].faqs.push(
+  {
+    id: "sys-1",
+    question: "What is the Smart Irrigation System?",
+    answer: "It is an AI-powered irrigation solution using ESP modules and soil moisture sensors."
+  },
+  {
+    id: "sys-2",
+    question: "How does the system work?",
+    answer: "Sensor data is collected, processed by AI, and used to guide irrigation decisions."
+  },
+  {
+    id: "sys-3",
+    question: "Can farmers control irrigation manually?",
+    answer: "Yes, farmers can manually start, stop, or override AI-based irrigation."
+  }
+);
+
+faqData[1].faqs.push(
+  {
+    id: "hw-1",
+    question: "What hardware components are used?",
+    answer: "ESP microcontrollers, soil moisture sensors, and irrigation control modules."
+  },
+  {
+    id: "hw-2",
+    question: "Does the system work without internet?",
+    answer: "Yes, GSM connectivity allows farmers to use the system without internet access."
+  },
+  {
+    id: "hw-3",
+    question: "How is sensor data transmitted?",
+    answer: "Data is transmitted using internet or GSM networks depending on availability."
+  }
+);
+
+faqData[2].faqs.push(
+  {
+    id: "reg-1",
+    question: "Why is farmer registration required?",
+    answer: "Registration ensures secure data mapping and personalized irrigation guidance."
+  },
+  {
+    id: "reg-2",
+    question: "What details are required during registration?",
+    answer: "Basic farmer details and ESP or hardware module identification information."
+  },
+  {
+    id: "reg-3",
+    question: "Is farmer data secure?",
+    answer: "Yes, all data is securely stored and used only for system operations."
+  }
+);
+
+
+faqData.forEach((_, index) => renderFaqGroup(index));
+
+basicfaqData[0].basics.push(
+    {
+        id: "basic-1",
+        question: "What is the Smart Irrigation System?",
+        answer: "It is an AI-powered irrigation solution using ESP modules and soil moisture sensors."
+    },
+    {
+        id: "basic-2",
+        question: "How does the system work?",
+        answer: "Sensor data is collected, processed by AI, and used to guide irrigation decisions."
+    },
+    {
+        id: "basic-3",
+        question: "Can farmers control irrigation manually?",
+        answer: "Yes, farmers can manually start, stop, or override AI-based irrigation."
+    }
+);
+renderBasic(0);
+
+</script>
+
+{% endblock %}

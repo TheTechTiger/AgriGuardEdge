@@ -1,0 +1,898 @@
+{% extends "base.html" %} {% block title%} Account Info {% endblock %} {% block
+content %}
+
+<main id="main" class="main">
+  <div class="pagetitle">
+    <h1>Profile</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+        <li class="breadcrumb-item">Users</li>
+        <li class="breadcrumb-item active">Profile</li>
+      </ol>
+    </nav>
+  </div>
+  <!-- End Page Title -->
+
+  <section class="section profile">
+    <div class="row">
+      <div class="col-xl-4">
+        <div class="card">
+            <div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
+            <img src="{{ profile_data.profilePic }}" alt="Profile" class="rounded-circle" />
+            <h2>{{profile_data.userName}}</h2>
+            <h3>{{profile_data.emailId}}</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-8">
+        <div class="card">
+          <div class="card-body pt-3">
+            <!-- Bordered Tabs -->
+            <ul class="nav nav-tabs nav-tabs-bordered" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profile-edit" aria-selected="true"
+                  role="tab" fdprocessedid="iv5myb">
+                  Edit Profile
+                </button>
+              </li>
+
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-settings" aria-selected="false"
+                  role="tab" tabindex="-1">
+                  ESP Settings
+                </button>
+              </li>
+
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-notifysettings"
+                  aria-selected="false" role="tab" tabindex="-1">
+                  Notification Settings
+                </button>
+              </li>
+
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-change-password"
+                  aria-selected="false" role="tab" tabindex="-1">
+                  Change Password
+                </button>
+              </li>
+            </ul>
+            <div class="tab-content pt-2">
+              <div class="tab-pane fade profile-edit pt-3 active show" id="profile-edit" role="tabpanel">
+                <!-- Profile Edit Form -->
+
+                <form class="row g-3">
+                  <div class="row mb-3">
+                    <label for="profileImage" class="col-md-4 col-lg-3 col-form-label">
+                      Profile Image
+                    </label>
+
+                    <div class="col-md-8 col-lg-9">
+
+              
+                      <img id="profileImg" src="/profilePic" alt="Profile" width="120"
+                        style="border-radius: 50%; object-fit: cover;" />
+
+                      <div class="pt-2">
+
+                      
+                        <input type="file" id="fileInput" hidden />
+
+        
+                        <button type="button" class="btn btn-primary btn-sm" title="Upload new profile image"
+                          onclick="triggerUpload()">
+                          <i class="bi bi-upload"></i>
+                        </button>
+
+                      
+                        <button type="button" class="btn btn-danger btn-sm" title="Remove my profile image"
+                          onclick="deletePic()">
+                          <i class="bi bi-trash"></i>
+                        </button>
+
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-floating">
+                      <input type="text" class="form-control" id="floatingName" placeholder="First Name"
+                        fdprocessedid="8d7hyi" />
+                      <label for="floatingName">First Name</label>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-floating">
+                      <input type="text" class="form-control" id="floatingName" placeholder="Middle Name"
+                        fdprocessedid="8d7hyi" />
+                      <label for="floatingName">Middle Name</label>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-floating">
+                      <input type="text" class="form-control" id="floatingName" placeholder="Last Name"
+                        fdprocessedid="8d7hyi" />
+                      <label for="floatingName">Last Name</label>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input type="email" class="form-control" id="floatingEmail" placeholder="Your Email"
+                        fdprocessedid="3fb5dc" />
+                      <label for="floatingEmail">Your Email</label>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-floating">
+                      <input type="password" class="form-control" id="floatingPassword" placeholder="Password"
+                        fdprocessedid="73g2l" />
+                      <label for="floatingPassword">Password</label>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-floating">
+                      <textarea class="form-control" placeholder="Address" id="floatingTextarea"
+                        style="height: 100px"></textarea>
+                      <label for="floatingTextarea">Address</label>
+                    </div>
+                  </div>
+
+                  <div class="col-md-4">
+                    <div class="form-floating mb-3">
+                      <select class="form-select" id="stateSelect" aria-label="State" fdprocessedid="pfvzs">
+                        <option selected>Select State</option>
+
+                        <!-- States -->
+                        <option value="AP">Andhra Pradesh</option>
+                        <option value="AR">Arunachal Pradesh</option>
+                        <option value="AS">Assam</option>
+                        <option value="BR">Bihar</option>
+                        <option value="CT">Chhattisgarh</option>
+                        <option value="GA">Goa</option>
+                        <option value="GJ">Gujarat</option>
+                        <option value="HR">Haryana</option>
+                        <option value="HP">Himachal Pradesh</option>
+                        <option value="JH">Jharkhand</option>
+                        <option value="KA">Karnataka</option>
+                        <option value="KL">Kerala</option>
+                        <option value="MP">Madhya Pradesh</option>
+                        <option value="MH">Maharashtra</option>
+                        <option value="MN">Manipur</option>
+                        <option value="ML">Meghalaya</option>
+                        <option value="MZ">Mizoram</option>
+                        <option value="NL">Nagaland</option>
+                        <option value="OD">Odisha</option>
+                        <option value="PB">Punjab</option>
+                        <option value="RJ">Rajasthan</option>
+                        <option value="SK">Sikkim</option>
+                        <option value="TN">Tamil Nadu</option>
+                        <option value="TG">Telangana</option>
+                        <option value="TR">Tripura</option>
+                        <option value="UP">Uttar Pradesh</option>
+                        <option value="UT">Uttarakhand</option>
+                        <option value="WB">West Bengal</option>
+
+                        <!-- Union Territories -->
+                        <option value="AN">Andaman and Nicobar Islands</option>
+                        <option value="CH">Chandigarh</option>
+                        <option value="DN">
+                          Dadra and Nagar Haveli and Daman and Diu
+                        </option>
+                        <option value="DL">Delhi</option>
+                        <option value="JK">Jammu and Kashmir</option>
+                        <option value="LA">Ladakh</option>
+                        <option value="LD">Lakshadweep</option>
+                        <option value="PY">Puducherry</option>
+                      </select>
+                      <label for="floatingSelect">State</label>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-floating mb-3">
+                      <select class="form-select" id="districtSelect" aria-label="District">
+                        <option value="" selected>Select District</option>
+                      </select>
+
+                      <label for="floatingSelect">District</label>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="col-md-12">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" id="floatingCity" placeholder="City"
+                          fdprocessedid="1mdsov" />
+                        <label for="floatingCity">City</label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-8">
+                    <div class="form-floating">
+                      <input type="number" class="form-control" id="floatingfarmArea" placeholder="Your Farm Area"
+                        fdprocessedid="3fb5dc" />
+                      <label for="floatingfarmArea">Farm Area</label>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-floating">
+                      <select class="form-select" id="unitSelect" aria-label="Unit" fdprocessedid="pfvzs">
+                        <option selected>Select Unit</option>
+
+                        <!-- Units -->
+                        <option value="acre">Acre</option>
+                        <option value="hectare">Hectare</option>
+                        <option value="sqft">Square Feet</option>
+                        <option value="sqm">Square Meters</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="text-center">
+                    <button type="submit" class="btn btn-primary" fdprocessedid="ga4t5">
+                      Submit
+                    </button>
+                    <button type="reset" class="btn btn-secondary" fdprocessedid="kq6nv6">
+                      Reset
+                    </button>
+                  </div>
+                </form>
+                <!-- End Profile Edit Form -->
+              </div>
+
+              <div class="tab-pane fade pt-3" id="profile-settings" role="tabpanel">
+                <!-- Settings Form -->
+                <form>
+                  <div class="row mb-3">
+                    <label for="inputText" class="col-sm-2 col-form-label">Latitude</label>
+                    <div class="col-sm-10">
+                      <input type="number" class="form-control" fdprocessedid="cw8hwe" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label for="inputText" class="col-sm-2 col-form-label">Longitude</label>
+                    <div class="col-sm-10">
+                      <input type="number" class="form-control" fdprocessedid="cw8hwe" />
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <label for="inputText" class="col-sm-2 col-form-label">ESP Status</label>
+                    <div class="col-sm-10">
+                      <h4>
+                        <span id="espBadge" class="badge bg-secondary">Unknown</span>
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div class="text-center">
+                    <button type="submit" class="btn btn-primary">
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+                <!-- End settings Form -->
+              </div>
+
+              <!-- Notification Settings -->
+              <div class="tab-pane fade pt-3" id="profile-notifysettings" role="tabpanel">
+                <form>
+                  <div class="row mb-2">
+                    <div class="col-12">
+                      <div class="form-check form-switch p-0 d-flex justify-content-between align-items-center fs-5">
+                        <label class="form-check-label" id="masterLabel" for="notifyAll">
+                          Unsubscribe from all notifications
+                        </label>
+                        <input class="form-check-input" type="checkbox" id="notifyAll" checked />
+                      </div>
+
+                      <div class="form-check form-switch p-0 d-flex justify-content-between align-items-center fs-5">
+                        <label class="form-check-label" for="irrigationAlerts">
+                          Scheduled irrigations alerts
+                        </label>
+                        <input class="form-check-input notification-toggle" type="checkbox" id="irrigationAlerts"
+                          checked />
+                      </div>
+
+                      <div class="form-check form-switch p-0 d-flex justify-content-between align-items-center fs-5">
+                        <label class="form-check-label" for="pumpAlerts">
+                          Water pump alerts
+                        </label>
+                        <input class="form-check-input notification-toggle" type="checkbox" id="pumpAlerts" checked />
+                      </div>
+
+                      <div class="form-check form-switch p-0 d-flex justify-content-between align-items-center fs-5">
+                        <label class="form-check-label" for="sensorAlerts">
+                          Sensor alerts
+                        </label>
+                        <input class="form-check-input notification-toggle" type="checkbox" id="sensorAlerts" checked />
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+              <div class="tab-pane fade pt-3" id="profile-change-password" role="tabpanel">
+                <!-- Change Password Form -->
+                <form>
+                  <div class="row mb-3">
+                    <label for="currentPassword" class="col-md-4 col-lg-3 col-form-label">Current Password</label>
+                    <div class="col-md-8 col-lg-9">
+                      <input name="password" type="password" class="form-control" id="currentPassword" />
+                    </div>
+                  </div>
+
+                  <div class="row mb-3">
+                    <label for="newPassword" class="col-md-4 col-lg-3 col-form-label">New Password</label>
+                    <div class="col-md-8 col-lg-9">
+                      <input name="newpassword" type="password" class="form-control" id="newPassword" />
+                    </div>
+                  </div>
+
+                  <div class="row mb-3">
+                    <label for="renewPassword" class="col-md-4 col-lg-3 col-form-label">Re-enter New Password</label>
+                    <div class="col-md-8 col-lg-9">
+                      <input name="renewpassword" type="password" class="form-control" id="renewPassword" />
+                    </div>
+                  </div>
+
+                  <div class="text-center">
+                    <button type="submit" class="btn btn-primary">
+                      Change Password
+                    </button>
+                  </div>
+                </form>
+                <!-- End Change Password Form -->
+              </div>
+            </div>
+            <!-- End Bordered Tabs -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  //profic pic script
+  function triggerUpload() {
+    document.getElementById("fileInput").click();
+}
+
+document.getElementById("fileInput").addEventListener("change", function() {
+    let file = this.files[0];
+    if (!file) return;
+
+    let formData = new FormData();
+    formData.append("file", file);
+
+    fetch("/profilePic", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log(data);
+
+        // 🔥 Refresh image after upload (avoid caching)
+        document.getElementById("profileImg").src = "/profilePic?" + new Date().getTime();
+    });
+});
+
+function deletePic() {
+    fetch("/profilePic", {
+        method: "DELETE"
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log(data);
+
+    // 🔥 Refresh image after delete (use server route to get default)
+    document.getElementById("profileImg").src = "/profilePic?" + new Date().getTime();
+    });
+}
+  const stateDistrictMap = {
+    AP: [
+      "Anantapur",
+      "Chittoor",
+      "East Godavari",
+      "Guntur",
+      "Kadapa",
+      "Krishna",
+      "Kurnool",
+      "Nellore",
+      "Prakasam",
+      "Srikakulam",
+      "Visakhapatnam",
+      "Vizianagaram",
+      "West Godavari",
+    ],
+
+    AR: [
+      "Tawang",
+      "West Kameng",
+      "East Kameng",
+      "Papum Pare",
+      "Kurung Kumey",
+      "Kra Daadi",
+      "Lower Subansiri",
+      "Upper Subansiri",
+      "West Siang",
+      "East Siang",
+      "Siang",
+      "Upper Siang",
+      "Lower Siang",
+      "Lower Dibang Valley",
+      "Dibang Valley",
+      "Anjaw",
+      "Lohit",
+      "Namsai",
+      "Changlang",
+      "Tirap",
+      "Longding",
+    ],
+
+    AS: [
+      "Baksa",
+      "Barpeta",
+      "Biswanath",
+      "Bongaigaon",
+      "Cachar",
+      "Charaideo",
+      "Chirang",
+      "Darrang",
+      "Dhemaji",
+      "Dhubri",
+      "Dibrugarh",
+      "Goalpara",
+      "Golaghat",
+      "Hailakandi",
+      "Hojai",
+      "Jorhat",
+      "Kamrup",
+      "Kamrup Metropolitan",
+      "Karbi Anglong",
+      "Karimganj",
+      "Kokrajhar",
+      "Lakhimpur",
+      "Majuli",
+      "Morigaon",
+      "Nagaon",
+      "Nalbari",
+      "Sivasagar",
+      "Sonitpur",
+      "South Salmara",
+      "Tinsukia",
+      "Udalguri",
+      "West Karbi Anglong",
+    ],
+
+    BR: [
+      "Araria",
+      "Arwal",
+      "Aurangabad",
+      "Banka",
+      "Begusarai",
+      "Bhagalpur",
+      "Bhojpur",
+      "Buxar",
+      "Darbhanga",
+      "East Champaran",
+      "Gaya",
+      "Gopalganj",
+      "Jamui",
+      "Jehanabad",
+      "Kaimur",
+      "Katihar",
+      "Khagaria",
+      "Kishanganj",
+      "Lakhisarai",
+      "Madhepura",
+      "Madhubani",
+      "Munger",
+      "Muzaffarpur",
+      "Nalanda",
+      "Nawada",
+      "Patna",
+      "Purnia",
+      "Rohtas",
+      "Saharsa",
+      "Samastipur",
+      "Saran",
+      "Sheikhpura",
+      "Sheohar",
+      "Sitamarhi",
+      "Siwan",
+      "Supaul",
+      "Vaishali",
+      "West Champaran",
+    ],
+
+    CG: [
+      "Balod",
+      "Baloda Bazar",
+      "Balrampur",
+      "Bastar",
+      "Bemetara",
+      "Bijapur",
+      "Bilaspur",
+      "Dantewada",
+      "Dhamtari",
+      "Durg",
+      "Gariaband",
+      "Janjgir-Champa",
+      "Jashpur",
+      "Kabirdham",
+      "Kanker",
+      "Kondagaon",
+      "Korba",
+      "Koriya",
+      "Mahasamund",
+      "Mungeli",
+      "Narayanpur",
+      "Raigarh",
+      "Raipur",
+      "Rajnandgaon",
+      "Sukma",
+      "Surajpur",
+      "Surguja",
+    ],
+
+    GA: ["North Goa", "South Goa"],
+
+    GJ: [
+      "Ahmedabad",
+      "Amreli",
+      "Anand",
+      "Aravalli",
+      "Banaskantha",
+      "Bharuch",
+      "Bhavnagar",
+      "Botad",
+      "Chhota Udaipur",
+      "Dahod",
+      "Dang",
+      "Devbhoomi Dwarka",
+      "Gandhinagar",
+      "Gir Somnath",
+      "Jamnagar",
+      "Junagadh",
+      "Kheda",
+      "Kutch",
+      "Mahisagar",
+      "Mehsana",
+      "Morbi",
+      "Narmada",
+      "Navsari",
+      "Panchmahal",
+      "Patan",
+      "Porbandar",
+      "Rajkot",
+      "Sabarkantha",
+      "Surat",
+      "Surendranagar",
+      "Tapi",
+      "Vadodara",
+      "Valsad",
+    ],
+
+    HR: [
+      "Ambala",
+      "Bhiwani",
+      "Charkhi Dadri",
+      "Faridabad",
+      "Fatehabad",
+      "Gurugram",
+      "Hisar",
+      "Jhajjar",
+      "Jind",
+      "Kaithal",
+      "Karnal",
+      "Kurukshetra",
+      "Mahendragarh",
+      "Nuh",
+      "Palwal",
+      "Panchkula",
+      "Panipat",
+      "Rewari",
+      "Rohtak",
+      "Sirsa",
+      "Sonipat",
+      "Yamunanagar",
+    ],
+
+    HP: [
+      "Bilaspur",
+      "Chamba",
+      "Hamirpur",
+      "Kangra",
+      "Kinnaur",
+      "Kullu",
+      "Lahaul and Spiti",
+      "Mandi",
+      "Shimla",
+      "Sirmaur",
+      "Solan",
+      "Una",
+    ],
+
+    JH: [
+      "Bokaro",
+      "Chatra",
+      "Deoghar",
+      "Dhanbad",
+      "Dumka",
+      "East Singhbhum",
+      "Garhwa",
+      "Giridih",
+      "Godda",
+      "Gumla",
+      "Hazaribagh",
+      "Jamtara",
+      "Khunti",
+      "Koderma",
+      "Latehar",
+      "Lohardaga",
+      "Pakur",
+      "Palamu",
+      "Ramgarh",
+      "Ranchi",
+      "Sahebganj",
+      "Seraikela Kharsawan",
+      "Simdega",
+      "West Singhbhum",
+    ],
+
+    KA: [
+      "Bagalkot",
+      "Ballari",
+      "Belagavi",
+      "Bengaluru Rural",
+      "Bengaluru Urban",
+      "Bidar",
+      "Chamarajanagar",
+      "Chikkaballapur",
+      "Chikkamagaluru",
+      "Chitradurga",
+      "Dakshina Kannada",
+      "Davangere",
+      "Dharwad",
+      "Gadag",
+      "Hassan",
+      "Haveri",
+      "Kalaburagi",
+      "Kodagu",
+      "Kolar",
+      "Koppal",
+      "Mandya",
+      "Mysuru",
+      "Raichur",
+      "Ramanagara",
+      "Shivamogga",
+      "Tumakuru",
+      "Udupi",
+      "Uttara Kannada",
+      "Vijayanagara",
+      "Yadgir",
+    ],
+
+    KL: [
+      "Alappuzha",
+      "Ernakulam",
+      "Idukki",
+      "Kannur",
+      "Kasaragod",
+      "Kollam",
+      "Kottayam",
+      "Kozhikode",
+      "Malappuram",
+      "Palakkad",
+      "Pathanamthitta",
+      "Thiruvananthapuram",
+      "Thrissur",
+      "Wayanad",
+    ],
+
+    MP: [
+      "Agar Malwa",
+      "Alirajpur",
+      "Anuppur",
+      "Ashoknagar",
+      "Balaghat",
+      "Barwani",
+      "Betul",
+      "Bhind",
+      "Bhopal",
+      "Burhanpur",
+      "Chhatarpur",
+      "Chhindwara",
+      "Damoh",
+      "Datia",
+      "Dewas",
+      "Dhar",
+      "Dindori",
+      "Guna",
+      "Gwalior",
+      "Harda",
+      "Hoshangabad",
+      "Indore",
+      "Jabalpur",
+      "Jhabua",
+      "Katni",
+      "Khandwa",
+      "Khargone",
+      "Mandla",
+      "Mandsaur",
+      "Morena",
+      "Narsinghpur",
+      "Neemuch",
+      "Panna",
+      "Raisen",
+      "Rajgarh",
+      "Ratlam",
+      "Rewa",
+      "Sagar",
+      "Satna",
+      "Sehore",
+      "Seoni",
+      "Shahdol",
+      "Shajapur",
+      "Sheopur",
+      "Shivpuri",
+      "Sidhi",
+      "Singrauli",
+      "Tikamgarh",
+      "Ujjain",
+      "Umaria",
+      "Vidisha",
+    ],
+
+    MH: [
+      "Ahmednagar",
+      "Akola",
+      "Amravati",
+      "Aurangabad",
+      "Beed",
+      "Bhandara",
+      "Buldhana",
+      "Chandrapur",
+      "Dhule",
+      "Gadchiroli",
+      "Gondia",
+      "Hingoli",
+      "Jalgaon",
+      "Jalna",
+      "Kolhapur",
+      "Latur",
+      "Mumbai City",
+      "Mumbai Suburban",
+      "Nagpur",
+      "Nanded",
+      "Nandurbar",
+      "Nashik",
+      "Osmanabad",
+      "Palghar",
+      "Parbhani",
+      "Pune",
+      "Raigad",
+      "Ratnagiri",
+      "Sangli",
+      "Satara",
+      "Sindhudurg",
+      "Solapur",
+      "Thane",
+      "Wardha",
+      "Washim",
+      "Yavatmal",
+    ],
+
+    DL: [
+      "Central Delhi",
+      "East Delhi",
+      "New Delhi",
+      "North Delhi",
+      "North East Delhi",
+      "North West Delhi",
+      "South Delhi",
+      "South East Delhi",
+      "South West Delhi",
+      "West Delhi",
+    ],
+  };
+
+  const stateSelect = document.getElementById("stateSelect");
+  const districtSelect = document.getElementById("districtSelect");
+  // districtSelect.disabled = true;
+
+  stateSelect.addEventListener("change", function () {
+    const state = this.value;
+    districtSelect.innerHTML = '<option value="">Select District</option>';
+
+    if (stateDistrictMap[state]) {
+      stateDistrictMap[state].forEach((d) => {
+        const opt = document.createElement("option");
+        opt.value = d;
+        opt.textContent = d;
+        districtSelect.appendChild(opt);
+      });
+    }
+  });
+
+  // ESP Status Badge Update
+  document.addEventListener("DOMContentLoaded", () => {
+    const espBadge = document.getElementById("espBadge");
+
+    const setBadge = (el, text, cls) => {
+      if (!el) return;
+      el.className = "badge " + cls;
+      el.textContent = text;
+    };
+
+    function updateEspStatus(val) {
+      if (val == 1) setBadge(espBadge, "Online", "bg-success");
+      else setBadge(espBadge, "Offline", "bg-danger");
+    }
+
+    function checkEspData() {
+      fetch("/Get_ESPdata")
+        .then((response) => response.json())
+        .then((data) => {
+          const entryTimestamp = new Date(data.ESP_Last_Scene);
+          const currentTime = new Date();
+
+          const diffMinutes = (currentTime - entryTimestamp) / (1000 * 60);
+
+          if (diffMinutes > 5) {
+            updateEspStatus(0);
+          } else {
+            updateEspStatus(1);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching ESP data:", error);
+        });
+    }
+    checkEspData();
+    setInterval(checkEspData, 60000);
+  });
+
+  // Notification Settings Toggle Logic
+
+  const masterToggle = document.getElementById('notifyAll');
+  const masterLabel = document.getElementById('masterLabel');
+  const notificationToggles = document.querySelectorAll('.notification-toggle');
+
+  masterToggle.addEventListener('change', function () {
+    if (this.checked) {
+      // Subscribe → check all
+      notificationToggles.forEach(toggle => {
+        toggle.checked = true;
+        toggle.blur();
+      });
+
+      masterLabel.textContent = 'Unsubscribe from all notifications';
+    } else {
+      // Unsubscribe → uncheck all
+      notificationToggles.forEach(toggle => {
+        toggle.checked = false;
+        toggle.focus();
+      });
+
+      masterLabel.textContent = 'Subscribe to all notifications';
+    }
+  });
+
+  notificationToggles.forEach(toggle => {
+    toggle.addEventListener('change', () => {
+      const allChecked = [...notificationToggles].every(t => t.checked);
+
+      masterToggle.checked = allChecked;
+      masterLabel.textContent = allChecked
+        ? 'Unsubscribe from all notifications'
+        : 'Subscribe to all notifications';
+    });
+  });
+
+</script>
+
+{% endblock %}
