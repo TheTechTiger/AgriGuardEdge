@@ -220,7 +220,11 @@ static void probe_cycle(bool mark_reference) {
 
 void loop() {
   static uint32_t eval_ms = 0;
+#if AG_DEMO_LIVE_1S
+  uint32_t cadence = 1;  // demo: fresh sensor values on screen every second
+#else
   uint32_t cadence = ag_cadence_s(rtc_core.state, rtc_probing);
+#endif
   if (millis() - eval_ms < cadence * 1000UL && eval_ms) {
     // button: short press cycles screens
     if (digitalRead(PIN_BUTTON) == LOW) {
@@ -327,6 +331,9 @@ void loop() {
   // integrates only while awake. Probe cycles (the only place volume
   // matters) never sleep, so conservation is unaffected.
   cadence = ag_cadence_s(rtc_core.state, rtc_probing);
+#if AG_DEMO_LIVE_1S
+  delay(50);  // demo: no sleep, screen stays live at 1 s cadence
+#else
   if (rtc_core.state == AG_ST_NORMAL && !rtc_probing) {
     uint32_t slept = cadence > 5 ? cadence - 5 : cadence;  // 5 s for TX/UI
     Serial.printf("{\"sleep\":%u}\n", slept);
@@ -335,6 +342,7 @@ void loop() {
     rtc_total_sleep_s += slept;
     esp_deep_sleep_start();
   }
+#endif
 }
 
 // drain DMA before sleep (§6.7 trap 1) — ui owns tft; helper here avoids

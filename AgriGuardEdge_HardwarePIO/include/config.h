@@ -58,6 +58,9 @@
 // ---------- Display demo override ----------
 #define AG_DEMO_DISPLAY_ON 1   // judges: backlight FULL always, never dim/sleep.
                                // Set 0 to restore §9.1 power discipline.
+#define AG_DEMO_LIVE_1S 1      // judges: sensor eval + display refresh every
+                               // 1 s, no deep sleep. Set 0 to restore the
+                               // adaptive cadence (60/10/5 s + sleep).
 
 // ---------- TX policy (§7.1: defended 96 %, adaptive → 99 %) ----------
 #define AG_SUMMARY_EVERY_S   900  // 15 min → 96/day fixed
