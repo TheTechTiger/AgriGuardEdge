@@ -40,7 +40,9 @@ extern "C" {
 #define AG_PULSES_PER_LITRE_NOMINAL 450.0f   /* ZJ-S201: F = 7.5 × Q → 450 p/L.
                                               Bench-calibrate anyway (§5.7) */
 #define AG_FLOW_ALPHA               0.25f
-#define AG_FLOW_RATE_MAX_LPM        35.0f
+#define AG_FLOW_RATE_MAX_LPM        12.0f   /* rig max observed 8 L/min + 50 %
+                                              margin (meter max 30). Above
+                                              this on THIS plumbing ⇒ fault */
 #define AG_FLOW_RATE_MIN_TRUST_LPM  1.0f   /* ZJ-S201 mechanical floor (§14.1) */
 #define AG_LEAK_EPS_LPM             0.30f  /* pump-OFF flow above this = leak */
 #define AG_BASELINE_ALPHA           0.05f

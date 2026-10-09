@@ -46,6 +46,10 @@ int main() {
         CHECK(ag_health_gate(&c, &cfg, &s, nullptr) == AG_EV_FLOW_IMPLAUSIBLE, "flow implausible trips");
         s.flow_lpm = 0; s.vbat_v = 3.1f;
         CHECK(ag_health_gate(&c, &cfg, &s, nullptr) == AG_EV_POWER_LOW, "low battery trips");
+        s.vbat_v = 3.9f; s.flow_lpm = 8.0f;
+        CHECK(ag_health_gate(&c, &cfg, &s, nullptr) == AG_EV_NONE, "rig max 8 L/min passes");
+        s.flow_lpm = 15.0f;
+        CHECK(ag_health_gate(&c, &cfg, &s, nullptr) == AG_EV_FLOW_IMPLAUSIBLE, "15 L/min over rig cap trips");
     }
 
     /* 3. stuck: feed identical values, expect SENSOR_STUCK after K=8 */

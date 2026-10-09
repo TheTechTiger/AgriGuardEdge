@@ -198,7 +198,7 @@ typedef struct {
     uint32_t last_pulses;     // snapshot from previous evaluation
     uint32_t window_pulses;   // Δ over the current window
     uint32_t drops;           // missed-window counter → SENSOR_TIMEOUT
-    uint32_t implausible;     // rate > 35 L/min → SENSOR_FAULT
+    uint32_t implausible;     // rate > 12 L/min (rig cap) → SENSOR_FAULT
     float    rate_lpm;        // instantaneous, smoothed
     float    volume_ml;       // ∫ rate dt, reset per probe cycle
     uint8_t  health;          // OK / STUCK_ZERO / SPIKE / IMPLAUSIBLE
@@ -237,7 +237,7 @@ flow_ch_t flow_update(flow_ch_t *f, uint32_t pcnt_now,
 | Soil | `MAD(Δx) < 0.15 %` for `K=8` consecutive evals | `SENSOR_STUCK` |
 | Soil | `\|Δx\| > 6·MAD(Δx)` | `SENSOR_SPIKE_BURST` (sample excluded from baseline) |
 | DHT11 | `NaN` / no edge in 5 ms | `SENSOR_TIMEOUT` |
-| **Flow** | rate `< 0` or `> 35 L/min` | `FLOW_IMPLAUSIBLE` |
+| **Flow** | rate `< 0` or `> 12 L/min` (rig max 8 + margin) | `FLOW_IMPLAUSIBLE` |
 | **Flow** | commanded ON but `rate ≈ 0` for 3 evals | `FLOW_NO_PULSE` |
 | **Flow** | pulse count never advances for `> 60 s` | `FLOW_SENSOR_FAULT` |
 | **Flow** | wildly varying rate while pump steady | `FLOW_NOISY` |

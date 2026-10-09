@@ -107,3 +107,8 @@ Found by testing, not by opinion. Each item quotes the arch section it deviates 
     forced window (fired, ingested id 2119, rendered); production
     thresholds restored after. A fully motionless weep is still
     invisible — stated in §14.1.
+20. **Flow thresholds derived from the observed rig max (8 L/min).**
+    `FLOW_IMPLAUSIBLE` cap 35 → 12 L/min (50 % headroom); leak ε 0.30
+    and blockage floor 0.2 L/min unchanged — pump-off any-flow is still
+    a leak at any full scale. The earlier 0.27 L/min pump-test ramp was
+    priming, not the rig's capability.

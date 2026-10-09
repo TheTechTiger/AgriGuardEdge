@@ -11,7 +11,7 @@ import math
 # --- sync with anomaly_core.h ---
 PULSES_PER_LITRE_NOMINAL = 450.0  # ZJ-S201: F = 7.5 x Q
 FLOW_ALPHA = 0.25
-FLOW_RATE_MAX_LPM = 35.0
+FLOW_RATE_MAX_LPM = 12.0  # rig max observed 8 L/min + 50 % margin
 LEAK_EPS_LPM = 0.30
 BASELINE_ALPHA = 0.05
 SIGMA_FLOOR = 0.40
