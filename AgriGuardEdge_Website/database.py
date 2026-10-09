@@ -1,7 +1,8 @@
 import sqlite3
 import os
 import base64
-database="AgriGuardEdgeDB.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+database = os.path.join(BASE_DIR, "AgriGuardEdgeDB.db")
 
 def _bootstrap():
     # Base skeleton schema (users, farms, ESP registry, logs, rules,
@@ -13,8 +14,9 @@ def _bootstrap():
     SQL_DB = sqlite3.connect(database)
     if fresh:
         for schema_file in ("AgroSenseDB.db.sql", "agriguard_schema.sql"):
-            if os.path.exists(schema_file):
-                with open(schema_file, "r") as f:
+            schema_path = os.path.join(BASE_DIR, schema_file)
+            if os.path.exists(schema_path):
+                with open(schema_path, "r") as f:
                     SQL_DB.executescript(f.read())
     SQL_DB.execute("PRAGMA journal_mode=WAL;")
     SQL_DB.commit()

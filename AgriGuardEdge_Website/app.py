@@ -5,11 +5,16 @@ from datetime import datetime,timedelta
 import requests
 
 # flask run --debug -h 0.0.0.0 -p 80
-app = Flask("AgriGuardEdge")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# NOTE: Flask(__name__) (not a plain string) so template/static paths are
+# anchored at this file's directory — the server must boot identically
+# whether launched from here, the repo root, or anywhere else.
+app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", ".--secret-key--..")
 
-if os.path.exists(".env"):
-    with open(".env") as f:
+env_path = os.path.join(BASE_DIR, ".env")
+if os.path.exists(env_path):
+    with open(env_path) as f:
         for line in f:
             if "=" in line:
                 key, value = line.strip().split("=", 1)
@@ -76,7 +81,11 @@ def Get_Weather():
 @app.context_processor
 def inject_globals():
     if "userID" not in session:
-        return dict()
+        # Logged-out pages (login-adjacent, Contact, FAQ) still extend
+        # base.html, which dereferences profile_data — hand it a guest.
+        return dict(profile_data={"userName": "Guest", "emailId": "",
+                                  "profilePic": "assets/img/pfp.png"},
+                    notifications=[])
     profile_data = SQL_Get_ASSOC_DATA(f"SELECT userName, emailId, profilePic FROM userDetails WHERE id={session.get('userID', -1)}")[0]
     profile_data["profilePic"] = imageBytesToSrc(profile_data["profilePic"]) if profile_data["profilePic"] else "assets/img/pfp.png"
     notifications = SQL_Get_ASSOC_DATA(f"SELECT * FROM notifications WHERE userID={session.get('userID', -1)} ORDER BY dateTime LIMIT 5")
@@ -84,7 +93,7 @@ def inject_globals():
     
 @app.route("/assets/<path:filename>")
 def serve_static(filename):
-    return send_from_directory("assets", filename)
+    return send_from_directory(os.path.join(BASE_DIR, "assets"), filename)
 
 @app.route("/")
 def index():
@@ -404,7 +413,8 @@ def delete_chat(chat_id):
     return jsonify({"success": True})
 
 @app.route("/Get_ESPdata", methods=["GET"])
-def GetESP_Entries(database="AgriGuardEdgeDB.db"):
+def GetESP_Entries(database=None):
+    database = database or os.path.join(BASE_DIR, "AgriGuardEdgeDB.db")
     if "userID" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     try:
