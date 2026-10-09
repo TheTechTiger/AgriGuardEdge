@@ -1,3 +1,5 @@
 firmware/test/test_core
+tools/anomaly_replay/cpp_replay
+tools/anomaly_replay/out/
 __pycache__/
 *.pyc

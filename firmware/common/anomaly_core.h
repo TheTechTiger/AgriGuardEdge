@@ -45,8 +45,8 @@ extern "C" {
 #define AG_BASELINE_ALPHA           0.05f
 #define AG_SIGMA_FLOOR              0.40f  /* % moisture, guards /0 on flat win */
 #define AG_SOFT_BAND_SIGMA          2.0f   /* guarded adaptation gate (§5.3) */
-#define AG_CUSUM_K                  0.5f
-#define AG_CUSUM_H                  5.0f
+#define AG_CUSUM_K                  1.0f    /* fit via replay sweep §10.3 (was 0.5) */
+#define AG_CUSUM_H                  10.0f   /* fit via replay sweep §10.3 (was 5) */
 #define AG_SUSPECT_Z                2.0f
 #define AG_ALARM_Z                  3.0f
 #define AG_PERSIST_M                5
@@ -58,6 +58,7 @@ extern "C" {
 #define AG_SPIKE_MAD_MULT           6.0f
 #define AG_VTARGET_ML               250.0f
 #define AG_T_OBSERVE_S              180
+#define AG_EXT_BLANK                48     /* rain-tail ride-out (evals) */
 #define AG_BATT_LOW_V               3.40f
 #define AG_BASELINE_WIN             16     /* robust window for med/MAD */
 
@@ -173,6 +174,14 @@ typedef struct {
     uint8_t  leak_windows;  /* consecutive pump-OFF windows with flow */
     uint32_t last_t;
 
+    /* rain-tail ride-out: evals remaining (see §5.4 note in ag_step) */
+    uint8_t ext_blank;
+    uint8_t ext_calm;       /* consecutive |z|<1 evals while blanked */
+
+    /* persistence edge memory */
+    uint8_t prev_exc;       /* |z| > suspect_z on previous eval */
+    uint8_t prev_big;       /* |z| > alarm_z on previous eval */
+
     /* stats */
     uint32_t evals;
 } ag_core_t;
@@ -244,6 +253,9 @@ static inline void ag_init(ag_core_t *c) {
     c->probe_active = 0; c->probe_v_ml = 0.f;
     c->probe_moist_start = 0.f; c->probe_t0 = 0; c->last_verdict_ratio = 0.f;
     c->flow_stale_s = 0; c->leak_windows = 0; c->last_t = 0;
+    c->flow_stale_s = 0; c->leak_windows = 0; c->last_t = 0;
+    c->ext_blank = 0; c->ext_calm = 0;
+    c->prev_exc = 0; c->prev_big = 0;
     c->evals = 0;
 }
 
@@ -253,12 +265,14 @@ static inline void ag_init(ag_core_t *c) {
 /* ------------------------------------------------------------------ */
 static inline ag_event_t ag_health_gate(ag_core_t *c, const ag_sample_t *s,
                                         float *innov_out) {
+    /* Rail / disconnect FIRST (raw ADC pinned) — a disconnected probe floats
+       to a rail, and its calibrated % would also read out-of-range, so the
+       raw rail is the stronger, more specific signal. */
+    if (s->adc_raw >= 0 && (s->adc_raw <= 2 || s->adc_raw >= 4093))
+        return AG_EV_SENSOR_DISCONNECTED;
     /* Soil out-of-range (calibrated %) */
     if (!(s->moisture_pct >= 2.0f && s->moisture_pct <= 98.0f))
         return AG_EV_SENSOR_OUT_OF_RANGE;
-    /* Rail / disconnect (raw ADC pinned) */
-    if (s->adc_raw >= 0 && (s->adc_raw <= 2 || s->adc_raw >= 4093))
-        return AG_EV_SENSOR_DISCONNECTED;
     /* Innovation features from robust window */
     if (c->prev_valid) {
         float dx = fabsf(s->moisture_pct - c->prev_moist);
@@ -428,6 +442,30 @@ static inline ag_result_t ag_step(ag_core_t *c, const ag_config_t *cfg,
     r.z_soil = z; r.baseline_moist = base; r.sigma = sigma;
     r.deficit = base - s->moisture_pct; /* positive = drier than expected */
 
+    /* Rain-tail ride-out: after a +8σ-class step the exponential decay tail
+       would otherwise integrate in CUSUM_up and false-alarm OVER_IRRIGATION.
+       While blanked we FREEZE the baseline (adapting toward rainwater would
+       poison it and fire WATER_STRESS when the rain ends), hold the CUSUMs
+       and the persistence machine, and emit nothing. Exit is STICKY — three
+       consecutive |z| < 1 evals — so one noise dip on the tail cannot end
+       the blank early. A still-soaking field re-fires EXTERNAL and renews
+       the blank. Flow watches above still run — safety-critical paths are
+       never blinded. Rain genuinely masks stress; documented, not hidden. */
+    if (c->ext_blank > 0) {
+        if (fabsf(z) < 1.0f) c->ext_calm++;
+        else c->ext_calm = 0;
+        if (c->ext_calm >= 3) { c->ext_blank = 0; c->ext_calm = 0; }
+    }
+    if (c->ext_blank > 0) {
+        c->ext_blank--;
+        c->cusum_up = 0.f; c->cusum_down = 0.f;
+        ag_window_push(c, s->moisture_pct);
+        c->last_t = s->t_sec;
+        r.event = AG_EV_NONE; r.severity = AG_SEV_NONE;
+        r.cusum_up = 0.f; r.cusum_down = 0.f; r.state = c->state;
+        return r;
+    }
+
     /* ---- ③ EWMA-CUSUM on the residual ---- */
     c->ewma_z += 0.2f * (z - c->ewma_z);
     c->cusum_up = ag_fmax0(c->cusum_up + (z - cfg->cusum_k));
@@ -437,6 +475,10 @@ static inline ag_result_t ag_step(ag_core_t *c, const ag_config_t *cfg,
     uint8_t anomalous = (fabsf(z) > cfg->suspect_z ||
                          c->cusum_up > cfg->cusum_h ||
                          c->cusum_down > cfg->cusum_h) ? 1 : 0;
+    uint8_t exc = (fabsf(z) > cfg->suspect_z) ? 1 : 0;
+    uint8_t big = (fabsf(z) > cfg->alarm_z) ? 1 : 0;
+    uint8_t cusum_trip = (c->cusum_up > cfg->cusum_h ||
+                          c->cusum_down > cfg->cusum_h) ? 1 : 0;
 
     /* Large positive step with fast decay signature ⇒ external event
        (rain / third-party irrigation): INFO, must NOT alert. We flag it
@@ -447,8 +489,9 @@ static inline ag_result_t ag_step(ag_core_t *c, const ag_config_t *cfg,
         /* still adapt slowly — rain is real water, baseline should absorb */
         c->moist_base[h] += 0.5f * AG_BASELINE_ALPHA * (s->moisture_pct - base);
         if (!s->pump_on) c->leak_windows = 0;
-        /* do not feed CUSUM/persistence with rain */
+        /* do not feed CUSUM/persistence with rain; blank the decay tail */
         c->cusum_up = 0.f; c->cusum_down = 0.f;
+        c->ext_blank = AG_EXT_BLANK;
         ag_window_push(c, s->moisture_pct);
         c->last_t = s->t_sec;
         r.state = c->state;
@@ -497,17 +540,30 @@ static inline ag_result_t ag_step(ag_core_t *c, const ag_config_t *cfg,
 
     switch (c->state) {
     case AG_ST_NORMAL:
-        if (anomalous && (c->cusum_up > cfg->cusum_h || c->cusum_down > cfg->cusum_h ||
-                          fabsf(z) > cfg->suspect_z)) {
+        /* Entry is deliberately stricter than "one bad sample": a single
+           excursion of any size must not open SUSPECT or noise alone pages
+           the farmer — even a 3σ noise blip (p≈0.3 %/eval) would enter
+           weekly. Entry needs CUSUM confirmation or two consecutive
+           excursions. Votes are counted fresh from entry (hist cleared) so
+           pre-history cannot promote. */
+        if (cusum_trip || (exc && c->prev_exc)) {
             c->state = AG_ST_SUSPECT;
             c->suspect_since = s->t_sec;
+            c->hist_n = 0; c->clean_run = 0;
+            for (int i = 0; i < AG_PERSIST_M; i++) c->hist[i] = 0;
             r.event = AG_EV_NONE; r.severity = AG_SEV_LOW;
         }
+        c->prev_exc = exc;
+        c->prev_big = big;
         break;
     case AG_ST_SUSPECT: {
         uint32_t aged = s->t_sec - c->suspect_since;
         c->state_age_s = aged;
-        if (c->hist_n >= AG_PERSIST_M && votes >= AG_PERSIST_N && aged >= AG_PERSIST_MIN_S) {
+        /* Fast-track: |z| > 3σ twice running is a strong signal
+           (p≈1e-5/window) — promote without waiting out the 90 s rule,
+           which is what meets the ≤120 s criterion for ≥4σ shifts. */
+        uint8_t fast = (big && c->prev_big);
+        if ((c->hist_n >= AG_PERSIST_M && votes >= AG_PERSIST_N && aged >= AG_PERSIST_MIN_S) || fast) {
             c->state = AG_ST_ALARM;
             /* classify the sustained shift */
             if (c->cusum_down > cfg->cusum_h && r.deficit > 2.0f) {
@@ -527,6 +583,8 @@ static inline ag_result_t ag_step(ag_core_t *c, const ag_config_t *cfg,
         } else {
             r.event = AG_EV_NONE; r.severity = AG_SEV_LOW; /* still suspect */
         }
+        c->prev_exc = exc;
+        c->prev_big = big;
         break;
     }
     case AG_ST_ALARM:
