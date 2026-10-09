@@ -1,7 +1,6 @@
 /* AgriGuard Edge dashboard — panels per docs/architechture.md §9.
- * Sources: /api/events /api/summary /api/probes /api/energy (new) plus
- * /Get_ESPdata (legacy recent-log endpoint, kept for the live trace).
- * ApexCharts is the vendored build loaded by base.html. Refresh: 15 s.
+ * All data comes from the edge-ingest API (/api/events /api/summary
+ * /api/probes /api/energy). No legacy endpoints. Refresh: 15 s.
  */
 let soilTraceChart = null;
 let conservationChart = null;
@@ -17,18 +16,19 @@ async function getJSON(url) {
   return r.json();
 }
 
-function renderSoilTrace(graph, summaries) {
+function renderSoilTrace(summaries) {
   const el = document.querySelector("#soilTraceChart");
   if (!el) return;
-  const pts = (graph || []).slice().reverse().map((g) => ({
-    x: new Date(g.timestamp).getTime(),
-    y: g.moisture,
+  const rows = (summaries || []).slice().reverse();
+  const pts = rows.map((s) => ({
+    x: new Date(s.received_at * 1000).getTime(),
+    y: s.avg_moisture,
   }));
-  // Diurnal baseline band from summaries: rolling mean ± 2σ (shaded envelope
-  // the anomaly must depart from — the most persuasive visual, §9).
+  // Diurnal baseline band from the summaries themselves: rolling mean ± 2σ
+  // (shaded envelope the anomaly must depart from — §9's key visual).
   let band = [];
-  if (summaries && summaries.length > 3) {
-    const vals = summaries.slice().reverse().map((s) => s.avg_moisture);
+  if (rows.length > 3) {
+    const vals = rows.map((s) => s.avg_moisture);
     const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
     const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length) || 1;
     band = pts.map((p) => ({ x: p.x, y: [mean - 2 * sd, mean + 2 * sd] }));
@@ -70,13 +70,17 @@ function renderConservation(probes) {
   else { conservationChart = new ApexCharts(el, opts); conservationChart.render(); }
 }
 
-function renderFlow(graph) {
+function renderFlow(events) {
   const el = document.querySelector("#flowChart");
   if (!el) return;
-  const pts = (graph || []).slice().reverse().map((g) => ({
-    x: new Date(g.timestamp).getTime(),
-    y: g.flow_lpm || 0,
-  }));
+  // Flow evidence rides on every alert/probe_result — sparse but real.
+  const pts = (events || [])
+    .slice().reverse()
+    .filter((e) => e.evidence && e.evidence.flow_rate_lpm !== undefined)
+    .map((e) => ({
+      x: new Date(e.received_at * 1000).getTime(),
+      y: e.evidence.flow_rate_lpm || 0,
+    }));
   const opts = {
     series: [{ name: "L/min", data: pts.length ? pts : [{ x: Date.now(), y: 0 }] }],
     chart: { height: 300, type: "area", toolbar: { show: true } },
@@ -199,14 +203,9 @@ async function refresh() {
       getJSON("/api/probes").catch(() => []),
       getJSON("/api/energy").catch(() => []),
     ]);
-    let graph = [];
-    try {
-      const esp = await getJSON("/Get_ESPdata");
-      graph = esp.graph || [];
-    } catch (e) { /* logged-out or no node yet */ }
-    renderSoilTrace(graph, summaries);
+    renderSoilTrace(summaries);
     renderConservation(probes);
-    renderFlow(graph);
+    renderFlow(events);
     renderCusum(events);
     renderEnergy(summaries, energy);
     renderAlerts(events);

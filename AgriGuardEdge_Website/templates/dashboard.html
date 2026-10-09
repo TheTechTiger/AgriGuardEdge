@@ -95,10 +95,6 @@ content %}
     </section>
 </main>
 <!-- End #main -->
-<script>
-    const weatherDataFromServer = JSON.parse(`{{ weather_data | tojson | safe }}`);
-    const irrigationDataFromServer = JSON.parse(`{{ irrigation_data | tojson | safe }}`);
-</script>
 <script src="assets/js/dashboard.js"></script>
 
 {% endblock %}

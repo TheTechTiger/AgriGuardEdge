@@ -5,19 +5,15 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 database = os.path.join(BASE_DIR, "AgriGuardEdgeDB.db")
 
 def _bootstrap():
-    # Base skeleton schema (users, farms, ESP registry, logs, rules,
-    # notifications, chats) is shared with the AgroSense layout; the
-    # AgriGuard Edge tables (§8.1: messages/events/summaries/energy_log/
-    # probe_results) live in agriguard_schema.sql and are applied on top.
+    # Single clean schema (auth shell + §8.1 edge-ingest tables).
     # SQLite runs in WAL mode per docs/architechture.md §9.
     fresh = not os.path.exists(database)
     SQL_DB = sqlite3.connect(database)
     if fresh:
-        for schema_file in ("AgroSenseDB.db.sql", "agriguard_schema.sql"):
-            schema_path = os.path.join(BASE_DIR, schema_file)
-            if os.path.exists(schema_path):
-                with open(schema_path, "r") as f:
-                    SQL_DB.executescript(f.read())
+        schema_path = os.path.join(BASE_DIR, "schema.sql")
+        if os.path.exists(schema_path):
+            with open(schema_path, "r") as f:
+                SQL_DB.executescript(f.read())
     SQL_DB.execute("PRAGMA journal_mode=WAL;")
     SQL_DB.commit()
     SQL_DB.close()

@@ -834,22 +834,13 @@ function deletePic() {
     }
 
     function checkEspData() {
-      fetch("/Get_ESPdata")
+      fetch("/api/status")
         .then((response) => response.json())
         .then((data) => {
-          const entryTimestamp = new Date(data.ESP_Last_Scene);
-          const currentTime = new Date();
-
-          const diffMinutes = (currentTime - entryTimestamp) / (1000 * 60);
-
-          if (diffMinutes > 5) {
-            updateEspStatus(0);
-          } else {
-            updateEspStatus(1);
-          }
+          updateEspStatus(data.online ? 1 : 0);
         })
         .catch((error) => {
-          console.error("Error fetching ESP data:", error);
+          console.error("Error fetching node status:", error);
         });
     }
     checkEspData();
