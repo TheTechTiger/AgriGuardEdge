@@ -1,0 +1,191 @@
+/**
+ * ui_tft.cpp — LVGL 9 on ST7735, mostly-black + redraw-on-change (§9.1).
+ * Flush pattern + backlight PWM inherited from the DeskBuddy bring-up.
+ * §6.7 traps honoured: dmaWait() before sleep, SLPIN (not just BL off).
+ */
+#include <Arduino.h>
+#include <TFT_eSPI.h>
+#include <lvgl.h>
+#include "ui_tft.h"
+#include "config.h"
+
+static const uint16_t SCR_W = 160, SCR_H = 128;
+static TFT_eSPI tft = TFT_eSPI();
+static lv_display_t *disp;
+static lv_color_t buf1[160 * 32], buf2[160 * 32];
+
+static void my_flush(lv_display_t *d, const lv_area_t *a, uint8_t *px) {
+  uint32_t w = a->x2 - a->x1 + 1, h = a->y2 - a->y1 + 1;
+  tft.startWrite();
+  tft.setAddrWindow(a->x1, a->y1, w, h);
+  tft.pushColors((uint16_t *)px, w * h, true);
+  tft.dmaWait();
+  tft.endWrite();
+  lv_display_flush_ready(d);
+}
+
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+static void blWrite(uint8_t d) { ledcWrite(PIN_TFT_BL, d); }
+#else
+#define BL_CH 0
+static void blWrite(uint8_t d) { ledcWrite(BL_CH, d); }
+#endif
+
+// ---------- widgets ----------
+static lv_obj_t *scr[4];
+static lv_obj_t *liveMoist, *liveState, *liveFlow, *liveBatt, *liveTx;
+static lv_obj_t *conBars[4];
+static lv_obj_t *conRatio, *conVerdict;
+static lv_obj_t *probeArc, *probeFlow, *probeInfo;
+static lv_obj_t *alertLs[3];
+static int s_cur = 0;
+static char s_last[256];
+
+static lv_obj_t *label(lv_obj_t *p, int x, int y, int w, int h,
+                       const lv_font_t *f, uint32_t c) {
+  lv_obj_t *o = lv_label_create(p);
+  lv_obj_set_pos(o, x, y);
+  lv_obj_set_size(o, w, h);
+  lv_obj_set_style_text_font(o, f, 0);
+  lv_obj_set_style_text_color(o, lv_color_hex(c), 0);
+  return o;
+}
+
+static lv_obj_t *bar(lv_obj_t *p, int x, int y, int w, int h) {
+  lv_obj_t *o = lv_bar_create(p);
+  lv_bar_set_range(o, 0, 250);
+  lv_obj_set_pos(o, x, y);
+  lv_obj_set_size(o, w, h);
+  lv_bar_set_value(o, 0, LV_ANIM_OFF);
+  return o;
+}
+
+static uint32_t lvTickCb(void) { return millis(); }
+
+void ui_init(void) {
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+  ledcAttach(PIN_TFT_BL);
+#else
+  ledcSetup(BL_CH, 5000, 8);
+  ledcAttachPin(PIN_TFT_BL, BL_CH);
+#endif
+  blWrite(38);
+  tft.init();
+  tft.setRotation(3);
+  tft.initDMA();
+  tft.fillScreen(TFT_BLACK);
+  lv_init();
+  lv_tick_set_cb(lvTickCb);
+  disp = lv_display_create(SCR_W, SCR_H);
+  lv_display_set_color_format(disp, LV_COLOR_FORMAT_RGB565);
+  lv_display_set_flush_cb(disp, my_flush);
+  lv_display_set_buffers(disp, buf1, buf2, sizeof(buf1),
+                         LV_DISPLAY_RENDER_MODE_PARTIAL);
+
+  for (int i = 0; i < 4; i++) {
+    scr[i] = lv_obj_create(NULL);
+    lv_obj_set_style_bg_color(scr[i], lv_color_hex(0x000000), 0);
+    lv_obj_set_style_bg_opa(scr[i], LV_OPA_COVER, 0);
+    lv_obj_set_scrollbar_mode(scr[i], LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_style_pad_all(scr[i], 0, 0);
+  }
+  // ① LIVE
+  liveState = label(scr[0], 2, 2, 70, 14, &lv_font_montserrat_10, 0x30FF70);
+  liveBatt = label(scr[0], 80, 2, 78, 14, &lv_font_montserrat_10, 0x8AB4FF);
+  liveMoist = label(scr[0], 0, 18, 160, 30, &lv_font_montserrat_28, 0xFFFFFF);
+  liveFlow = label(scr[0], 2, 52, 156, 14, &lv_font_montserrat_12, 0x2BDFFF);
+  liveTx = label(scr[0], 2, 112, 156, 14, &lv_font_montserrat_10, 0x8AB4FF);
+  // ② CONSERVATION — the money screen
+  label(scr[1], 2, 2, 156, 14, &lv_font_montserrat_10, 0x8AB4FF);
+  const char *names[4] = {"Vdel", "Vsoil", "Vet", "Vres"};
+  for (int i = 0; i < 4; i++) {
+    lv_obj_t *nm = label(scr[1], 2, 20 + i * 16, 34, 12,
+                         &lv_font_montserrat_10, 0xFFFFFF);
+    lv_label_set_text(nm, names[i]);
+    conBars[i] = bar(scr[1], 38, 20 + i * 16, 118, 10);
+  }
+  conRatio = label(scr[1], 2, 86, 156, 24, &lv_font_montserrat_20, 0xFFFFFF);
+  conVerdict = label(scr[1], 2, 110, 156, 14, &lv_font_montserrat_12, 0xFF5030);
+  // ③ PROBE
+  probeArc = lv_arc_create(scr[2]);
+  lv_arc_set_range(probeArc, 0, 250);
+  lv_obj_set_size(probeArc, 80, 80);
+  lv_obj_set_pos(probeArc, 40, 8);
+  probeFlow = label(scr[2], 0, 92, 160, 20, &lv_font_montserrat_20, 0x2BDFFF);
+  probeInfo = label(scr[2], 0, 112, 160, 14, &lv_font_montserrat_10, 0xFFFFFF);
+  // ④ ALERTS
+  for (int i = 0; i < 3; i++)
+    alertLs[i] = label(scr[3], 2, 6 + i * 40, 156, 36,
+                       &lv_font_montserrat_10, 0xFFFFFF);
+
+  lv_screen_load(scr[0]);
+  lv_timer_handler();
+  s_last[0] = 0;
+}
+
+void ui_show(int screen) {
+  s_cur = (screen < 0) ? 3 : (screen % 4);
+  lv_screen_load(scr[s_cur]);
+  lv_timer_handler();
+}
+int ui_current(void) { return s_cur; }
+
+void ui_update(const ui_snapshot_t *s) {
+  char b[256];
+  snprintf(b, sizeof(b), "%d|%.1f|%.2f|%.2f|%s|%.0f|%.0f|%.0f|%.0f|%.3f|%d|%u",
+           s->state, s->moisture, s->flow_lpm, s->vbat,
+           s->event ? s->event : "-", s->v_del, s->v_soil, s->v_et,
+           s->v_resid, s->ratio, s_cur, s->next_tx_s);
+  if (!strcmp(b, s_last)) return;  // redraw-on-change only
+  strcpy(s_last, b);
+
+  const char *stt = s->state == 2 ? "ALARM" : (s->state == 1 ? "SUSPECT" : "OK");
+  lv_label_set_text_fmt(liveState, "%s", stt);
+  lv_obj_set_style_text_color(liveState,
+      lv_color_hex(s->state == 2 ? 0xFF3030 : (s->state == 1 ? 0xFFC030 : 0x30FF70)), 0);
+  lv_label_set_text_fmt(liveMoist, "%.1f %%", s->moisture);
+  lv_label_set_text_fmt(liveFlow, "flow %.2f L/m %s", s->flow_lpm,
+                        s->pump_on ? "PUMP ON" : "");
+  lv_label_set_text_fmt(liveBatt, "%.2fV", s->vbat);
+  lv_label_set_text_fmt(liveTx, "next tx %us  %0.f%% saved", s->next_tx_s,
+                        s->bw_saved_pct);
+
+  lv_bar_set_value(conBars[0], (int)s->v_del, LV_ANIM_OFF);
+  lv_bar_set_value(conBars[1], (int)s->v_soil, LV_ANIM_OFF);
+  lv_bar_set_value(conBars[2], (int)s->v_et, LV_ANIM_OFF);
+  lv_bar_set_value(conBars[3], (int)s->v_resid, LV_ANIM_OFF);
+  lv_label_set_text_fmt(conRatio, "r %.3f (vs ref %.2f)", s->ratio, s->vs_ref);
+  lv_label_set_text_fmt(conVerdict, "p%d %s", s->probe_n,
+                        s->event ? s->event : "");
+
+  lv_arc_set_value(probeArc, (int)s->vol_ml);
+  lv_label_set_text_fmt(probeFlow, "%.1f L/m", s->flow_lpm);
+  lv_label_set_text_fmt(probeInfo, "%s %lu pls dS %.2f",
+                        s->pump_on ? "PUMP ON" : "pump off",
+                        (unsigned long)s->pulses, s->dsoil_dt);
+
+  if (s->alert0) lv_label_set_text(alertLs[0], s->alert0);
+  if (s->alert1) lv_label_set_text(alertLs[1], s->alert1);
+  if (s->alert2) lv_label_set_text(alertLs[2], s->alert2);
+
+  lv_timer_handler();
+}
+
+void ui_power_tick(int state, int probe_active, uint32_t last_ms) {
+  uint16_t duty;
+  uint32_t idle = millis() - last_ms;
+  if (state == 2 || probe_active) duty = 255;
+  else if (idle < 30000) duty = 255;
+  else if (idle < 300000) duty = 38;
+  else duty = 0;
+  if (!duty) ui_sleep_panel();
+  else { ui_wake_panel(); blWrite((uint8_t)duty); }
+}
+
+void ui_sleep_panel(void) {
+  blWrite(0);
+  tft.fillScreen(TFT_BLACK);
+  tft.writecommand(ST7735_SLPIN);  // panel off, not just dark (§6.7)
+}
+
+void ui_wake_panel(void) { tft.writecommand(ST7735_SLPOUT); }
