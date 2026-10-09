@@ -358,10 +358,12 @@ def health():
 @app.route("/api/status", methods=["GET"])
 def api_status():
     # Replaces the legacy ESP last-seen: newest ingest across all tables.
+    # Window is 75 min: calm nodes send summaries hourly (15-min cadence,
+    # adaptive ÷4), so 15 min would cry wolf on a healthy sleeping node.
     rows = SQL_Get_ASSOC_DATA("SELECT MAX(received_at) AS last_seen, COUNT(*) AS n FROM messages")
     last = rows[0]["last_seen"] if rows and rows[0]["last_seen"] else 0
     return jsonify({"last_seen": last,
-                    "online": (time.time() - last) < 900 if last else False,
+                    "online": (time.time() - last) < 4500 if last else False,
                     "messages": rows[0]["n"] if rows else 0}), 200
 
 if __name__ == "__main__":
