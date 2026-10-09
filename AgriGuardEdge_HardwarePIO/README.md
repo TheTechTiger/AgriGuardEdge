@@ -17,7 +17,7 @@ design reference.
 | `src/main.cpp` | Scheduler: gated sensing → core → probe controller → TX → UI; RTC-persisted core across 60 s deep sleep |
 | `src/flow_pcnt.*` | ZJ-S201 capture: PCNT hardware unit, ISR-poll fallback, EMA rate + volume |
 | `src/sensors.*` | Power-gated soil/battery (200 ms bursts), bit-bang DHT11, relay |
-| `src/ui_tft.*` | LVGL 9, 4 screens (LIVE / CONSERVATION / PROBE / ALERTS), PWM backlight + SLPIN |
+| `src/ui_tft.*` | LVGL 9, 4 screens (LIVE / CONSERVATION / PROBE / ALERTS), backlight always on |
 | `src/net_tx.*` | WiFi connect→send→disconnect, PSRAM 256-slot ring, idempotent `msg_id`, backoff |
 | `include/config.h` | Pins, calibration, TX policy — **edit this for your bench** |
 | `include/lv_conf.h` | LVGL config (200 ms refresh, no animations) |

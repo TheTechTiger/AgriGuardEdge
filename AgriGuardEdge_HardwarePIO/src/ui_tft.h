@@ -26,5 +26,4 @@ void ui_show(int screen);          // 0 LIVE 1 CONSERVATION 2 PROBE 3 ALERTS
 int  ui_current(void);
 void ui_update(const ui_snapshot_t *s);  // redraw-on-change only
 void ui_power_tick(int state, int probe_active, uint32_t last_interaction_ms);
-void ui_sleep_panel(void);         // SLPIN + black, <100 uA check target
 void ui_wake_panel(void);

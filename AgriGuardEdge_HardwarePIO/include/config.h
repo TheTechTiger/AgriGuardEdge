@@ -55,12 +55,16 @@
 // ---------- Supply monitoring (12 V rail, 100k/27k → ×4.7037) ----------
 #define AG_SUPPLY_LOW_V  10.5f    // adapter sag / brownout ⇒ POWER_LOW
 
-// ---------- Display demo override ----------
-#define AG_DEMO_DISPLAY_ON 1   // judges: backlight FULL always, never dim/sleep.
-                               // Set 0 to restore §9.1 power discipline.
-#define AG_DEMO_LIVE_1S 1      // judges: sensor eval + display refresh every
+// ---------- Display: always on, no sleep/dim path ----------
+// Backlight is LEDC PWM on GPIO9, driven to 100 % in ui_init and held
+// there by ui_power_tick(). There is deliberately no dim/SLPIN path in
+// this build: the panel stays lit. (The §9.1 power discipline was retired
+// with the battery variant — this node is mains-powered.)
+#define AG_DEMO_LIVE_1S 0      // judges: sensor eval + display refresh every
                                // 1 s, no deep sleep. Set 0 to restore the
                                // adaptive cadence (60/10/5 s + sleep).
+// ---------- Probe schedule (needs a PRIMED water loop — pump dry = damage) ----------
+#define AG_PROBE_EVERY_S (4*3600)  // periodic audit, 6/day (§5.7, §7 duty)
 
 // ---------- TX policy (§7.1: defended 96 %, adaptive → 99 %) ----------
 #define AG_SUMMARY_EVERY_S   900  // 15 min → 96/day fixed

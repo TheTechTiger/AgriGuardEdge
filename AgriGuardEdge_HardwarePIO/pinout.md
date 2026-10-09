@@ -101,6 +101,6 @@ the meter; a kink *after* the meter reads as blockage, not a leak (§11).
 - [ ] Pulse line ≤3.4 V on meter, ESP disconnected
 - [ ] 12 V adapter sized ≥ pump stall; common GND verified with meter
 - [ ] 500 mL hand-pump test counts pulses (§5.7) → write `ppl` to NVS
-- [ ] Backlight dims (15 % ↔ 100 % sweep at boot proves GPIO9 PWM)
+- [ ] Backlight full-on at boot (GPIO9 PWM alive)
 - [ ] `pio run` SUCCESS, flash, Serial shows `{"boot":N,"pcnt":1}`
 - [ ] 10-min baseline soak, then hold BOOT 3 s on a known-good probe

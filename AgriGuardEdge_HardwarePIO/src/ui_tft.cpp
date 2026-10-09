@@ -1,7 +1,6 @@
 /**
  * ui_tft.cpp — LVGL 9 on ST7735, mostly-black + redraw-on-change (§9.1).
- * Flush pattern + backlight PWM inherited from the DeskBuddy bring-up.
- * §6.7 traps honoured: dmaWait() before sleep, SLPIN (not just BL off).
+ * Flush pattern inherited from the DeskBuddy bring-up; dmaWait() before sleep.
  */
 #include <Arduino.h>
 #include <TFT_eSPI.h>
@@ -71,7 +70,7 @@ void ui_init(void) {
   ledcSetup(BL_CH, 5000, 8);
   ledcAttachPin(PIN_TFT_BL, BL_CH);
 #endif
-  blWrite(38);
+  blWrite(255);  // always-on build: full brightness from the first frame
   tft.init();
   tft.setRotation(3);
   tft.initDMA();
@@ -215,27 +214,10 @@ void ui_update(const ui_snapshot_t *s) {
 }
 
 void ui_power_tick(int state, int probe_active, uint32_t last_ms) {
-#if AG_DEMO_DISPLAY_ON
-  // Judges demo: panel stays fully lit. No dim, no SLPIN, ever.
+  (void)state; (void)probe_active; (void)last_ms;
+  // Always-on build: panel awake, backlight full. No dim, no sleep.
   ui_wake_panel();
   blWrite(255);
-  return;
-#else
-  uint16_t duty;
-  uint32_t idle = millis() - last_ms;
-  if (state == 2 || probe_active) duty = 255;
-  else if (idle < 30000) duty = 255;
-  else if (idle < 300000) duty = 38;
-  else duty = 0;
-  if (!duty) ui_sleep_panel();
-  else { ui_wake_panel(); blWrite((uint8_t)duty); }
-#endif
-}
-
-void ui_sleep_panel(void) {
-  blWrite(0);
-  tft.fillScreen(TFT_BLACK);
-  tft.writecommand(ST7735_SLPIN);  // panel off, not just dark (§6.7)
 }
 
 void ui_wake_panel(void) { tft.writecommand(ST7735_SLPOUT); }
