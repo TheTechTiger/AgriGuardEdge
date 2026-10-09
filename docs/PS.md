@@ -1,0 +1,3 @@
+# Low-Power Anomaly Detection for Precision Irrigation Networks
+
+Battery-powered soil-moisture and irrigation sensors deployed across large farms must detect anomalies (leaks, sensor failure, irrigation malfunction) locally, since constant cloud transmission drains battery life too fast. Expected Solution: Design and demo an edge-friendly anomaly-detection approach (e.g., a lightweight model runnable on a microcontroller-class simulator) that flags irrigation anomalies from a sample sensor dataset while minimizing data sent to the cloud, and show the power/bandwidth trade-off. Dataset / Reference: https://iotdataset.com/data/smart-agriculture-plant-health-iot-sensors

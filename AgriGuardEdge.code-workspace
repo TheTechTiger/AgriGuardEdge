@@ -8,6 +8,12 @@
 		},
 		{
 			"path": "docs"
+		},
+		{
+			"path": "firmware"
+		},
+		{
+			"path": "tools"
 		}
 	],
 	"settings": {}
