@@ -9,10 +9,10 @@
 #pragma once
 #include <stdint.h>
 
-// ---------- Identity / backend (laptop hardcoded per bench setup) ----------
+// ---------- Identity / backend (default; Serial "set ip" overrides, saved in NVS) ----------
 #define AG_DEVICE_ID   "esp32_01"
-#define AG_SERVER_HOST "192.168.1.14"
-#define AG_BACKEND_URL "http://192.168.1.14:82/api/ingest"
+#define AG_SERVER_HOST "192.168.1.29"
+#define AG_BACKEND_URL "http://192.168.1.29:82/api/ingest"
 #define AG_WS_PORT     8765
 #define AG_WIFI_SSID   "10106629022"
 #define AG_WIFI_PASS   "10106629022"

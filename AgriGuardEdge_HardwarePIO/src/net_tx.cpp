@@ -9,6 +9,7 @@
 #include "net_tx.h"
 #include "ws_link.h"
 #include "config.h"
+#include "server_cfg.h"
 
 #define TX_SLOT 512
 
@@ -65,7 +66,9 @@ int tx_flush(void) {
   int sent = 0;
   int idx = (s_head - s_count + AG_TX_RING_SLOTS) % AG_TX_RING_SLOTS;
   while (s_count > 0) {
-    http.begin(AG_BACKEND_URL);
+    char url[64];
+    server_cfg_url(url, sizeof(url));
+    http.begin(url);
     http.addHeader("Content-Type", "application/json");
     int code = http.POST((uint8_t *)(s_ring + idx * TX_SLOT),
                          strlen(s_ring + idx * TX_SLOT));

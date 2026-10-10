@@ -1,5 +1,5 @@
 /**
- * ws_link.cpp — Links2004 WebSockets client to ws://AG_SERVER_HOST:8765.
+ * ws_link.cpp — Links2004 WebSockets client to ws://<server_cfg_ip>:8765.
  * Hello on connect; pump commands in ({type:pump,on}); flow frames out;
  * ping from server refreshes the dead-man timer. All parsing is
  * fixed-shape + bounded (StaticJsonDocument<160>).
@@ -11,6 +11,7 @@
 #include "ws_link.h"
 #include "config.h"
 #include "sensors.h"
+#include "server_cfg.h"
 
 static WebSocketsClient s_ws;
 static int8_t s_manual = -1;
@@ -20,6 +21,7 @@ static bool s_want_radio = false;
 static bool s_linked_once = false;
 static bool s_begun = false;
 static uint32_t s_began_ms = 0;
+static char s_host[32] = "";
 
 static uint32_t up_now(void) { return s_up_base + millis() / 1000; }
 
@@ -61,7 +63,9 @@ static void on_event(WStype_t type, uint8_t *payload, size_t len) {
 }
 
 void ws_init(void) {
-  s_ws.begin(AG_SERVER_HOST, AG_WS_PORT, "/");
+  strncpy(s_host, server_cfg_ip(), sizeof(s_host) - 1);
+  s_host[sizeof(s_host) - 1] = 0;
+  s_ws.begin(s_host, AG_WS_PORT, "/");
   s_ws.setReconnectInterval(5000);
   s_ws.enableHeartbeat(12000, 4000, 2);
   s_ws.onEvent(on_event);
@@ -70,6 +74,18 @@ void ws_init(void) {
 
 void ws_tick(uint32_t uptime_s) {
   s_up_base = uptime_s - millis() / 1000;
+  // Live server-IP switch (Serial "set ip"): reconnect the WS client when
+  // the stored IP changed. HTTP needs no handling (URL built per flush).
+  if (strcmp(s_host, server_cfg_ip()) != 0) {
+    strncpy(s_host, server_cfg_ip(), sizeof(s_host) - 1);
+    s_host[sizeof(s_host) - 1] = 0;
+    s_ws.disconnect();
+    s_ws.begin(s_host, AG_WS_PORT, "/");
+    s_ws.setReconnectInterval(5000);
+    s_ws.enableHeartbeat(12000, 4000, 2);
+    s_ws.onEvent(on_event);
+    Serial.printf("{\"ws_reconnect\":\"%s\"}\n", s_host);
+  }
   // Begin WiFi ONCE per outage: re-calling begin() every pass resets the
   // association and it never connects (found on hardware). Re-begin only
   // on explicit failure or a 20 s stall (covers post-sleep radio-off).

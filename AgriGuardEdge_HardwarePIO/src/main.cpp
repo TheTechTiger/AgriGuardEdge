@@ -16,6 +16,7 @@
 #include "ui_tft.h"
 #include "net_tx.h"
 #include "ws_link.h"
+#include "server_cfg.h"
 
 // ---------- RTC-persisted detector (deep-sleep safe, ~600 B) ----------
 RTC_DATA_ATTR static ag_core_t rtc_core;
@@ -125,6 +126,7 @@ static bool button_held(uint32_t ms) {
 void setup() {
   Serial.begin(115200);
   delay(200);
+  server_cfg_init();  // NVS server IP first: tx + ws use it below
   prefs.begin("agriguard", false);
   boot_count = prefs.getUInt("boot", 0) + 1;
   prefs.putUInt("boot", boot_count);
@@ -156,6 +158,8 @@ void setup() {
   memset(alert_ring, 0, sizeof(alert_ring));
   snprintf(alert_ring[0], sizeof(alert_ring[0]), "boot %u", boot_count);
   Serial.printf("{\"boot\":%u,\"pcnt\":%d}\n", boot_count, flow_using_pcnt());
+  server_cfg_print();
+  Serial.println(F("type 'help' for serial commands (set ip a.b.c.d)"));
 }
 
 // One controlled-volume probe: pump to V_target, observe, conserve.
@@ -256,6 +260,7 @@ static void tx_micro_leak(uint32_t pulses, uint32_t window_s, float rate) {
 void loop() {
   static uint32_t eval_ms = 0;
   static int8_t prev_man = -1;
+  server_cfg_poll_serial();  // Serial "set ip" — every pass, even between evals
   ws_tick(uptime_s());  // realtime link first: needs every pass, not just evals
 #if AG_DEMO_LIVE_1S
   uint32_t cadence = 1;  // demo: fresh sensor values on screen every second
